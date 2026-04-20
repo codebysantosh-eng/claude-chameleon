@@ -1,0 +1,14 @@
+{
+  "profile": "typescript",
+  "filePatterns": ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
+  "commands": {
+    "test": "npx vitest run",
+    "lint": "npx eslint .",
+    "format": "npx prettier --write .",
+    "typecheck": "npx tsc --noEmit",
+    "build": "npm run build",
+    "audit": "npm audit --production",
+    "e2e": null,
+    "coverage": "npx vitest run --coverage"
+  }
+}

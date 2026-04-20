@@ -1,0 +1,14 @@
+{
+  "profile": "php-symfony",
+  "filePatterns": ["src/**/*.php", "templates/**/*.twig", "config/**/*.yaml", "config/**/*.yml"],
+  "commands": {
+    "test": "composer test",
+    "lint": "php-cs-fixer fix --dry-run --diff",
+    "format": "php-cs-fixer fix",
+    "typecheck": "phpstan analyse",
+    "build": "composer install --no-dev --optimize-autoloader",
+    "audit": "composer audit",
+    "e2e": "php bin/console d:s:v && composer test -- --testsuite=e2e",
+    "coverage": "composer test -- --coverage-text"
+  }
+}

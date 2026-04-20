@@ -1,0 +1,16 @@
+{
+  "profile": "prisma",
+  "filePatterns": ["prisma/**/*.prisma", "**/*.prisma", "prisma/migrations/**"],
+  "commands": {
+    "test": null,
+    "lint": "npx prisma validate",
+    "format": "npx prisma format",
+    "typecheck": null,
+    "build": "npx prisma generate",
+    "audit": null,
+    "e2e": null,
+    "coverage": null,
+    "migrate": "npx prisma migrate dev",
+    "deploy": "npx prisma migrate deploy"
+  }
+}

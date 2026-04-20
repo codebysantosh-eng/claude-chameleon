@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "id": "forge.php-symfony.var-dump-warn",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/php-symfony/hooks/var-dump-warn.js"
+          }
+        ],
+        "matcher": "Write"
+      }
+    ]
+  }
+}

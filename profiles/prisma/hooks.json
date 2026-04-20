@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "id": "forge.prisma.schema-change-remind",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/prisma/hooks/schema-change-remind.js"
+          }
+        ],
+        "matcher": "Write"
+      }
+    ]
+  }
+}

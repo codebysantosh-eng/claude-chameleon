@@ -1,0 +1,14 @@
+{
+  "profile": "nextjs",
+  "filePatterns": ["app/**/*.tsx", "app/**/*.ts", "app/**/*.jsx", "app/**/*.js", "next.config.*"],
+  "commands": {
+    "test": "npx vitest run",
+    "lint": "next lint",
+    "format": "npx prettier --write .",
+    "typecheck": "npx tsc --noEmit",
+    "build": "next build",
+    "audit": "npm audit --production",
+    "e2e": "npx playwright test",
+    "coverage": "npx vitest run --coverage"
+  }
+}

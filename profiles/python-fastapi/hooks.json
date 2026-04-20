@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "id": "forge.python-fastapi.print-warn",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/python-fastapi/hooks/print-warn.js"
+          }
+        ],
+        "matcher": "Write"
+      }
+    ]
+  }
+}

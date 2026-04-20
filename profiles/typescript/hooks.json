@@ -1,0 +1,38 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "id": "forge.typescript.no-any-type",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/typescript/hooks/no-any-warn.js"
+          }
+        ],
+        "matcher": "Write"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "id": "forge.typescript.console-log-warn",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/typescript/hooks/console-log-warn.js"
+          }
+        ],
+        "matcher": "Write"
+      },
+      {
+        "hooks": [
+          {
+            "id": "forge.typescript.coverage-threshold-warn",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/typescript/hooks/coverage-threshold-warn.js"
+          }
+        ],
+        "matcher": "Bash"
+      }
+    ]
+  }
+}

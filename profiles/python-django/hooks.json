@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "id": "forge.python-django.print-warn",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/python-django/hooks/print-warn.js"
+          }
+        ],
+        "matcher": "Write"
+      },
+      {
+        "hooks": [
+          {
+            "id": "forge.python-django.coverage-threshold-warn",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/python-django/hooks/coverage-threshold-warn.js"
+          }
+        ],
+        "matcher": "Bash"
+      }
+    ]
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "id": "forge.core.block-hook-bypass",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/core/hooks/scripts/block-hook-bypass.js"
+          }
+        ],
+        "matcher": "Bash"
+      },
+      {
+        "hooks": [
+          {
+            "id": "forge.core.block-force-push",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/core/hooks/scripts/block-force-push.js"
+          }
+        ],
+        "matcher": "Bash"
+      },
+      {
+        "hooks": [
+          {
+            "id": "forge.core.secret-detector",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/core/hooks/scripts/secret-detector.js"
+          }
+        ],
+        "matcher": "Write"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "id": "forge.core.large-file-warn",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/core/hooks/scripts/large-file-warn.js"
+          }
+        ],
+        "matcher": "Write"
+      },
+      {
+        "hooks": [
+          {
+            "id": "forge.core.env-gitignore-guard",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/core/hooks/scripts/env-gitignore-guard.js"
+          }
+        ],
+        "matcher": "Write"
+      }
+    ]
+  }
+}
