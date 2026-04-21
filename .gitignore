@@ -1,0 +1,14 @@
+# Project-level .claude/ artifacts (created by /explore, user-specific)
+.claude/settings.json
+.claude/settings.local.json
+.claude/mcp/
+.claude/rules/
+.claude/worktrees/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+*.log
