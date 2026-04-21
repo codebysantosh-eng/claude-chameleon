@@ -1,0 +1,79 @@
+{
+  "commands": [
+    {
+      "name": "laravel-dev",
+      "description": "Start full Laravel dev environment (server + queue + logs + Vite)",
+      "command": "composer dev"
+    },
+    {
+      "name": "laravel-test",
+      "description": "Run PHPUnit tests with Paratest for parallel execution",
+      "command": "composer test"
+    },
+    {
+      "name": "laravel-format",
+      "description": "Format code with Laravel Pint (PSR-12 + Laravel standards)",
+      "command": "composer pint"
+    },
+    {
+      "name": "laravel-static",
+      "description": "Run PHPStan static analysis at level 8 (optional; install with composer require --dev larastan/larastan)",
+      "command": "composer phpstan"
+    },
+    {
+      "name": "laravel-refactor",
+      "description": "Automated refactoring with Rector",
+      "command": "composer rector"
+    },
+    {
+      "name": "laravel-migrate",
+      "description": "Run database migrations",
+      "command": "php artisan migrate"
+    },
+    {
+      "name": "laravel-rollback",
+      "description": "Rollback the last database migration",
+      "command": "php artisan migrate:rollback"
+    },
+    {
+      "name": "laravel-seed",
+      "description": "Run database seeders",
+      "command": "php artisan db:seed"
+    },
+    {
+      "name": "laravel-queue",
+      "description": "Start the queue worker",
+      "command": "php artisan queue:listen"
+    },
+    {
+      "name": "laravel-serve",
+      "description": "Start the local development server",
+      "command": "php artisan serve"
+    },
+    {
+      "name": "laravel-frontend-dev",
+      "description": "Start Vite dev server (for Inertia/Livewire full-stack apps)",
+      "command": "npm run dev"
+    },
+    {
+      "name": "laravel-frontend-build",
+      "description": "Production frontend build",
+      "command": "npm run build"
+    },
+    {
+      "name": "laravel-frontend-typecheck",
+      "description": "TypeScript typecheck (for Inertia/React full-stack apps)",
+      "command": "npm run typecheck"
+    },
+    {
+      "name": "laravel-frontend-lint",
+      "description": "ESLint over resources/js",
+      "command": "npm run lint"
+    },
+    {
+      "name": "laravel-frontend-test",
+      "description": "Run Vitest unit tests",
+      "command": "npm run test"
+    }
+  ]
+}

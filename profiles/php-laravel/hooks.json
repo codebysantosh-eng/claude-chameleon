@@ -1,0 +1,68 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "id": "forge.php-laravel.no-dd-warn",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/php-laravel/hooks/no-dd-warn.js"
+          }
+        ],
+        "matcher": "Write"
+      },
+      {
+        "hooks": [
+          {
+            "id": "forge.php-laravel.no-dd-warn-edit",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/php-laravel/hooks/no-dd-warn.js"
+          }
+        ],
+        "matcher": "Edit"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "id": "forge.php-laravel.no-hardcoded-secrets",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/php-laravel/hooks/no-hardcoded-secrets.js"
+          }
+        ],
+        "matcher": "Write"
+      },
+      {
+        "hooks": [
+          {
+            "id": "forge.php-laravel.no-hardcoded-secrets-edit",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/php-laravel/hooks/no-hardcoded-secrets.js"
+          }
+        ],
+        "matcher": "Edit"
+      },
+      {
+        "hooks": [
+          {
+            "id": "forge.php-laravel.missing-type-hints",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/php-laravel/hooks/missing-type-hints-warn.js"
+          }
+        ],
+        "matcher": "Write"
+      },
+      {
+        "hooks": [
+          {
+            "id": "forge.php-laravel.missing-type-hints-edit",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/php-laravel/hooks/missing-type-hints-warn.js"
+          }
+        ],
+        "matcher": "Edit"
+      }
+    ]
+  }
+}

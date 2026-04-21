@@ -6,8 +6,20 @@ detectors:
     weight: 3
   - glob: "src/**/*.ts"
     weight: 3
+  - glob: "src/**/*.tsx"
+    weight: 2
+  - glob: "resources/js/**/*.ts"
+    weight: 3
+  - glob: "resources/js/**/*.tsx"
+    weight: 3
+  - glob: "app/**/*.ts"
+    weight: 2
+  - glob: "app/**/*.tsx"
+    weight: 2
   - file-contains: [package.json, "typescript"]
     weight: 2
+  - file-contains: [package.json, "@types/"]
+    weight: 1
 threshold: 5
 ---
 
