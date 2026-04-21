@@ -1,49 +1,80 @@
 #!/usr/bin/env node
+/**
+ * forge.php-laravel.missing-type-hints-warn
+ * Warns when public/protected methods have untyped parameters in PHP files.
+ * Uses parameter-list extraction to avoid false positives in multi-line declarations.
+ */
+let raw = '';
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', chunk => { raw += chunk; });
+process.stdin.on('end', () => { run(JSON.parse(raw)); });
 
-const fs = require('fs');
-const path = require('path');
+function run(input) {
+  const tool = input.tool_name;
+  const toolInput = input.tool_input || {};
+  const filePath = toolInput.file_path || '';
+  let content = '';
+  if (tool === 'Write') content = toolInput.content || '';
+  else if (tool === 'Edit') content = toolInput.new_string || '';
 
-// Get the content from stdin or from the file passed as argument
-const filePath = process.argv[2];
-const content = filePath ? fs.readFileSync(filePath, 'utf8') : '';
+  // Skip test files, factories, seeders, migrations where strict typing is less critical
+  const isTestFile = /Test\.php$|test\.php$|\.test\.php$|Factory\.php$|Seeder\.php$/i.test(filePath);
+  const isMigration = /database\/(migrations|seeders)\//.test(filePath);
+  const isPhpFile = filePath.endsWith('.php');
 
-// Skip if this is a test file or migration (they often have lenient typing)
-if (filePath && (filePath.includes('tests/') || filePath.includes('database/migrations/'))) {
-  process.exit(0);
-}
+  if ((tool === 'Write' || tool === 'Edit') && isPhpFile && !isTestFile && !isMigration) {
+    let untypedCount = 0;
 
-// Check for function parameters without type hints
-// This is a basic check; may have false positives
-const functionPattern = /public\s+function\s+\w+\s*\(\s*\$\w+(?!\s*:)/;
+    // Extract all function declarations (including multi-line)
+    // Matches: public function foo(...) or protected function bar(...) etc.
+    const funcPattern = /(?:public|protected|private|static|\s)*function\s+(\w+)\s*\(([^)]*)\)/gs;
+    let match;
 
-let hasWarnings = false;
+    while ((match = funcPattern.exec(content)) !== null) {
+      const funcName = match[1];
+      const paramsStr = match[2];
 
-// Only warn if we see multiple untyped parameters
-const lines = content.split('\n');
-let untypedCount = 0;
+      // Skip magic methods that often have loose typing in base classes
+      if (funcName === '__call' || funcName === '__callStatic') {
+        continue;
+      }
 
-lines.forEach((line, idx) => {
-  // Look for public methods with untyped parameters
-  if (line.match(/public\s+function\s+\w+/)) {
-    const nextPart = content.substring(content.indexOf(line));
-    // Check if the parameters section has untyped $variables
-    const paramsMatch = nextPart.match(/\(([^)]+)\)/);
-    if (paramsMatch) {
-      const params = paramsMatch[1];
-      // Count parameters without type hints (simple heuristic: $ not preceded by :)
-      const untypedMatches = params.match(/(?<!:)\s+\$/g);
-      if (untypedMatches && untypedMatches.length > 0) {
-        untypedCount++;
+      // Split parameters on commas (top-level only; we don't try to handle () inside defaults)
+      const params = paramsStr
+        .split(',')
+        .map(p => p.trim())
+        .filter(p => p.length > 0);
+
+      for (const param of params) {
+        // Check if parameter is untyped
+        // Typed parameters start with: type, ?, union (A|B), intersection (A&B), FQN
+        // Untyped parameters start with: $, ...$, &$
+
+        // Valid type starters (non-exhaustive but covers common cases)
+        const typePattern = /^(\?|\\\\?[A-Z]\w*|\w+\\|\w+\||\w+&|int|string|bool|float|array|callable|iterable|object|mixed|void|never|self|static|parent|true|false|null)/;
+
+        // Check if param starts with a type
+        if (typePattern.test(param)) {
+          // Has a type hint, skip
+          continue;
+        }
+
+        // Check if param starts with $ (untyped parameter)
+        if (/^\$|^\.\.\.\$|^&\$/.test(param)) {
+          untypedCount++;
+        }
       }
     }
+
+    if (untypedCount > 0) {
+      console.log(JSON.stringify({
+        decision: 'approve',
+        type: 'warning',
+        message: `${untypedCount} public/protected method parameter(s) lack type hints in ${filePath}. Add type hints for PHP 8.4 compatibility and IDE support.`
+      }));
+      return;
+    }
   }
-});
 
-if (untypedCount > 0) {
-  console.warn(`⚠️  Laravel: ${untypedCount} public method(s) have untyped parameters — add type hints for PHP 8.4 compatibility`);
-  hasWarnings = true;
-}
-
-if (hasWarnings) {
-  process.exit(1);
+  console.log(JSON.stringify({ decision: 'approve' }));
 }
