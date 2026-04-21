@@ -204,6 +204,79 @@ function detectProfiles(forgeRoot, projectPath) {
   return detected;
 }
 
+// ─── Missing Profile Detection ────────────────────────────────────────────────
+
+/**
+ * Detects tech stacks present in the project and checks if profiles exist for them.
+ * Reports missing profiles to help users know what profiles could be created.
+ */
+function checkForMissingProfiles(forgeRoot, projectPath, detectedProfiles) {
+  const availableProfiles = getAvailableProfiles(forgeRoot);
+  const detectedNames = detectedProfiles.map(d => d.name);
+
+  // Map tech stacks to their profile names for missing detection
+  const techStackIndicators = {
+    'php-laravel': [
+      { file: 'composer.json', contains: 'laravel/framework' },
+      { file: 'artisan' }
+    ],
+    'python-django': [
+      { file: 'manage.py' },
+      { file: 'requirements.txt', contains: 'django' },
+      { file: 'pyproject.toml', contains: 'django' }
+    ],
+    'python-fastapi': [
+      { file: 'pyproject.toml', contains: 'fastapi' },
+      { file: 'requirements.txt', contains: 'fastapi' }
+    ],
+    'go': [
+      { file: 'go.mod' },
+      { glob: 'cmd/**/*.go' }
+    ],
+    'rust': [
+      { file: 'Cargo.toml' }
+    ]
+  };
+
+  const missingStacks = [];
+
+  for (const [stackName, indicators] of Object.entries(techStackIndicators)) {
+    // Skip if this profile is already detected and available
+    if (detectedNames.includes(stackName)) continue;
+    if (!availableProfiles.includes(stackName)) continue;
+
+    // Check if any indicator matches
+    let matches = false;
+    for (const indicator of indicators) {
+      if (indicator.file) {
+        if (fs.existsSync(path.join(projectPath, indicator.file))) {
+          if (indicator.contains) {
+            const content = readFileSafe(path.join(projectPath, indicator.file));
+            if (content && content.toLowerCase().includes((indicator.contains || '').toLowerCase())) {
+              matches = true;
+              break;
+            }
+          } else {
+            matches = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (matches) {
+      missingStacks.push(stackName);
+    }
+  }
+
+  if (missingStacks.length > 0) {
+    log('\n⚠  Potential additional profiles available:');
+    for (const stack of missingStacks) {
+      log(`  • ${stack} — activate with: node install/activate-profiles.js --project . --profiles ${[...detectedNames, stack].join(',')}`);
+    }
+  }
+}
+
 // ─── Activation ───────────────────────────────────────────────────────────────
 
 function activateProfiles(forgeRoot, profileNames, projectPath) {
@@ -373,6 +446,9 @@ async function main() {
       process.exit(0);
     }
     profileNames = detected.map(d => d.name);
+
+    // Check for missing profiles that could be created
+    checkForMissingProfiles(forgeRoot, PROJECT_PATH, detected);
   }
   log(`Profiles to activate: ${profileNames.join(', ')}\n`);
 
