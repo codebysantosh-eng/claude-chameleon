@@ -33,13 +33,7 @@ function toolAvailable(tool) {
 
 function runCommand(cmd, label) {
   log(`\n→ ${label}: ${cmd}`);
-  const [executable, ...cmdArgs] = cmd.split(/\s+/);
-
-  // For complex commands with && or |, use shell
-  const useShell = cmd.includes('&&') || cmd.includes('|') || cmd.includes(';');
-  const result = useShell
-    ? spawnSync(cmd, { shell: true, encoding: 'utf8', cwd: PROJECT_ROOT, stdio: 'inherit' })
-    : spawnSync(executable, cmdArgs, { encoding: 'utf8', cwd: PROJECT_ROOT, stdio: 'inherit' });
+  const result = spawnSync(cmd, { shell: true, encoding: 'utf8', cwd: PROJECT_ROOT, stdio: 'inherit' });
 
   if (result.status === 0) {
     ok(label);
@@ -50,67 +44,7 @@ function runCommand(cmd, label) {
   }
 }
 
-// ─── YAML Parser (minimal) ────────────────────────────────────────────────────
-
-function parseSimpleYaml(content) {
-  const result = {};
-  const lines = content.split('\n').filter(l => !l.trim().startsWith('#') && l.trim());
-  let currentKey = null;
-  let currentList = null;
-  let currentObj = null;
-
-  for (const line of lines) {
-    const indent = line.length - line.trimStart().length;
-    const trimmed = line.trimStart();
-
-    if (indent === 0 && trimmed.includes(':')) {
-      const colonIdx = trimmed.indexOf(':');
-      currentKey = trimmed.slice(0, colonIdx).trim();
-      const v = trimmed.slice(colonIdx + 1).trim();
-      if (v === '') {
-        result[currentKey] = [];
-        currentList = result[currentKey];
-        currentObj = null;
-      } else {
-        result[currentKey] = v.replace(/^["']|["']$/g, '');
-        currentList = null;
-      }
-      continue;
-    }
-
-    if (indent === 2 && trimmed.startsWith('- ')) {
-      const itemRaw = trimmed.slice(2);
-      if (itemRaw.includes(':')) {
-        currentObj = {};
-        if (currentList) currentList.push(currentObj);
-        const colonIdx = itemRaw.indexOf(':');
-        const k = itemRaw.slice(0, colonIdx).trim();
-        const v = itemRaw.slice(colonIdx + 1).trim().replace(/^["']|["']$/g, '');
-        if (v) currentObj[k] = v;
-      } else {
-        currentObj = null;
-        if (currentList) currentList.push(itemRaw.trim().replace(/^["']|["']$/g, ''));
-      }
-      continue;
-    }
-
-    if (indent === 4 && currentObj) {
-      const colonIdx = trimmed.indexOf(':');
-      if (colonIdx > 0) {
-        const k = trimmed.slice(0, colonIdx).trim();
-        // Handle inline arrays: [a, b, c]
-        const rawVal = trimmed.slice(colonIdx + 1).trim();
-        if (rawVal.startsWith('[')) {
-          currentObj[k] = rawVal.slice(1, -1).split(',').map(s => s.trim().replace(/^["']|["']$/g, ''));
-        } else {
-          currentObj[k] = rawVal.replace(/^["']|["']$/g, '');
-        }
-      }
-    }
-  }
-
-  return result;
-}
+const { parseSimpleYaml } = require('./lib/yaml');
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
@@ -123,8 +57,21 @@ function main() {
   }
 
   const forgeConfig = parseSimpleYaml(fs.readFileSync(forgeYamlPath, 'utf8'));
-  const forgeRoot = forgeConfig.forge_root;
   const profiles = forgeConfig.profiles || [];
+
+  // forge_root resolution: FORGE_ROOT env var → ~/.claude/.forge.yaml → error
+  let forgeRoot = process.env.FORGE_ROOT || null;
+  if (!forgeRoot) {
+    const globalYaml = path.join(process.env.HOME, '.claude', '.forge.yaml');
+    if (fs.existsSync(globalYaml)) {
+      const globalConfig = parseSimpleYaml(fs.readFileSync(globalYaml, 'utf8'));
+      forgeRoot = globalConfig.forge_root || null;
+    }
+  }
+  if (!forgeRoot) {
+    fail('forge_root not found', 'Set FORGE_ROOT env var in CI or run ./install.sh to populate ~/.claude/.forge.yaml');
+    process.exit(1);
+  }
 
   if (profiles.length === 0) {
     log('No profiles in .forge.yaml. No forge CI checks to run.');
@@ -134,7 +81,7 @@ function main() {
   log('═══════════════════════════════════════════════════════');
   log('  Forge CI Runner');
   log(`  Project: ${PROJECT_ROOT}`);
-  log(`  Profiles: ${profiles.map(p => p.name).join(', ')}`);
+  log(`  Profiles: ${profiles.join(', ')}`);
   log('═══════════════════════════════════════════════════════\n');
 
   // Load optional forge-ci.local.sh for custom steps
@@ -145,7 +92,7 @@ function main() {
   const ran = new Set(); // track commands already run (avoid duplicates across profiles)
 
   for (const profile of profiles) {
-    const profileName = profile.name;
+    const profileName = typeof profile === 'string' ? profile : profile.name;
     const commandsPath = forgeRoot
       ? path.join(forgeRoot, 'profiles', profileName, 'commands.json')
       : path.join(PROJECT_ROOT, 'node_modules', '.forge', profileName, 'commands.json');
@@ -156,26 +103,32 @@ function main() {
       continue;
     }
 
-    const commands = JSON.parse(fs.readFileSync(commandsPath, 'utf8')).commands || {};
+    let commands = {};
+    try {
+      commands = JSON.parse(fs.readFileSync(commandsPath, 'utf8')).commands || {};
+    } catch (e) {
+      fail(`Profile '${profileName}'`, `commands.json is invalid JSON: ${e.message}`);
+      allPassed = false;
+      continue;
+    }
 
     log(`\n─── Profile: ${profileName} ─────────────────────────────`);
 
     // Run each CI-relevant command
-    for (const step of ['typecheck', 'lint', 'test', 'audit']) {
+    for (const step of ['typecheck', 'lint', 'format-check', 'build', 'test', 'audit']) {
       const cmd = commands[step];
       if (!cmd) continue;
 
-      const cmdKey = `${profileName}:${step}`;
       if (ran.has(cmd)) {
         log(`  (skipping duplicate: ${cmd})`);
         continue;
       }
       ran.add(cmd);
 
-      // Tool availability check
-      const tool = cmd.split(/\s+/)[0].replace(/^npx\s+/, '').split(/\s+/)[0];
-      const toolName = cmd.startsWith('npx') ? cmd.split(/\s+/)[1] : tool;
-      if (!cmd.startsWith('npx') && !toolAvailable(toolName)) {
+      // Tool availability check — skip for package manager runners that handle installs themselves
+      const toolName = cmd.split(/\s+/)[0];
+      const selfInstallingTools = new Set(['npx', 'pnpm', 'yarn', 'bun']);
+      if (!selfInstallingTools.has(toolName) && !toolAvailable(toolName)) {
         fail(`${step} (${profileName})`, `Tool '${toolName}' not found. Install it or skip this check.`);
         allPassed = false;
         continue;

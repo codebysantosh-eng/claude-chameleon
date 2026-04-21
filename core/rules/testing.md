@@ -50,4 +50,4 @@ Use structured logging instead of raw print statements:
 
 ## Reference
 
-See `skills/tdd-patterns/SKILL.md` for patterns specific to the active stack.
+See the active profile's `skills/SKILL.md#testing` for stack-specific test patterns.

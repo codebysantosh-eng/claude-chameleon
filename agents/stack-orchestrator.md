@@ -2,7 +2,7 @@
 name: stack-orchestrator
 description: Profile loader and cold-start guard. Runs at the start of every deep command. Reads .forge.yaml, loads active profile context, and confirms profiles are ready — or falls back to generic mode explicitly.
 tools: Read, Bash, Glob
-model: claude-haiku-4-5-20251001
+model: haiku
 ---
 
 # Stack Orchestrator
@@ -18,23 +18,24 @@ You do NOT route commands. You do NOT delegate to specialist agents. You load co
 
 ## Step 1: Check forge installation
 
-Read `.forge.yaml` in the current directory. If it doesn't exist, check parent directories up to the project root.
+**Step 1a:** Read `~/.claude/.forge.yaml` (global, machine-specific). Extract `forge_root`.
+- If missing: output the "forge not installed" message and return in generic mode.
+- If `forge_root` is not a readable directory: output the broken-install message and return in generic mode.
 
-```
-forge_root: <path from .forge.yaml>
-```
+**Step 1b:** Find the project root, then read `.forge.yaml` there.
 
-Check that `forge_root` is a readable directory:
-- If readable: continue
-- If not readable (broken symlink, moved repo): output the broken-install message (see below) and return in generic mode
+1. Walk up from cwd until you find a directory containing `.git` — that is the project root.
+2. If no `.git` found, use cwd as the project root.
+3. Read `.forge.yaml` at the project root.
+4. If not found: output the "no .forge.yaml" message and return in generic mode.
 
 ---
 
 ## Step 2: Validate profiles
 
-For each profile in `.forge.yaml`:
-1. Check that `{forge_root}/profiles/{name}/rules.md` is readable (symlink health check)
-2. If any symlink is broken, report it specifically
+For each profile listed in the project `.forge.yaml`:
+1. Check that `{forge_root}/profiles/{name}/rules.md` is readable
+2. If any profile file is broken or missing, report it specifically
 
 If all profiles pass:
 
@@ -49,7 +50,7 @@ ACTIVE PROFILES:
   typescript  → src/**/*.ts (test: npx vitest run | lint: npx eslint .)
   python-django → scrapers/**/*.py (test: pytest --cov | lint: ruff check .)
 
-FORGE_ROOT: /Users/santosh/.claude
+FORGE_ROOT: /home/user/.claude
 ```
 
 This output becomes the preamble for specialist agents to read.
@@ -71,63 +72,50 @@ FILE ROUTING:
 
 ## Output on success
 
+Wrap the handoff block in sentinels so downstream agents can parse it reliably:
+
 ```
 ✓ Forge profiles loaded.
 
-ACTIVE PROFILES:
-  [profile name] → [path pattern] ([commands summary])
+<<<FORGE_HANDOFF>>>
+ACTIVE_PROFILES: [profile name] | [path pattern] | test:[cmd] | lint:[cmd]
+FORGE_ROOT: [absolute path]
+FILE_ROUTING: [ext,ext] → [profile name]
+<<<END_FORGE_HANDOFF>>>
+```
 
-FORGE_ROOT: [path]
+**Contract (do not change field names without updating all deep command docs):**
+- `ACTIVE_PROFILES` — one line per profile, pipe-delimited: `name | glob | test:cmd | lint:cmd`
+- `FORGE_ROOT` — absolute path, no trailing slash
+- `FILE_ROUTING` — comma-separated extensions → profile name, one line per rule
 
-FILE ROUTING:
-  [extension] → [profile]
+**Example:**
+```
+✓ Forge profiles loaded.
+
+<<<FORGE_HANDOFF>>>
+ACTIVE_PROFILES: typescript | src/**/*.ts | test:npx vitest run | lint:npx eslint .
+ACTIVE_PROFILES: python-django | scrapers/**/*.py | test:pytest --cov | lint:ruff check .
+FORGE_ROOT: /home/user/.claude
+FILE_ROUTING: .ts,.tsx → typescript
+FILE_ROUTING: .py → python-django
+COLLISION_RULE: first listed profile wins
+<<<END_FORGE_HANDOFF>>>
 ```
 
 ---
 
-## Output: broken symlinks
+## Failure outputs
 
-```
-⚠ Broken forge installation detected.
-  ✗ profiles/typescript/rules.md — BROKEN SYMLINK
+On any failure condition, output one of these compact messages and enter generic mode.
+For full recovery instructions, Read `{forge_root}/agents/stack-orchestrator-messages.md` and include the relevant section.
 
-Forge source may have moved. Re-run:
-  cd [forge_root] && ./install.sh --project .
-  
-Running in GENERIC MODE until fixed.
-```
-
----
-
-## Output: forge_root not readable
-
-```
-⚠ Forge not installed on this machine.
-
-.forge.yaml found — this project uses claude-chameleon profiles.
-Forge does not appear to be installed.
-
-To install:
-  git clone <forge-repo> ~/claude-chameleon
-  cd ~/claude-chameleon && ./install.sh --project .
-
-Running in GENERIC MODE until installed.
-```
-
----
-
-## Output: no .forge.yaml
-
-```
-⚠ No .forge.yaml found.
-
-This project has not been configured with claude-chameleon.
-To configure:
-  cd [forge-root] && ./install.sh --detect --project [this-project-path]
-
-Running in GENERIC MODE.
-Commands will use generic tooling without stack-specific guidance.
-```
+| Condition | First line of output |
+|-----------|---------------------|
+| Broken symlink | `⚠ Broken forge installation — [file] is a broken symlink.` |
+| Not installed | `⚠ Forge not installed — ~/.claude/.forge.yaml missing.` |
+| forge_root not readable | `⚠ Broken forge installation — forge_root is not readable.` |
+| No project .forge.yaml | `⚠ No .forge.yaml — project not configured with claude-chameleon.` |
 
 ---
 

@@ -8,6 +8,10 @@ detectors:
     weight: 4
   - file-contains: [Pipfile, "fastapi"]
     weight: 4
+  - file-contains: [setup.cfg, "fastapi"]
+    weight: 4
+  - file-contains: [setup.py, "fastapi"]
+    weight: 4
   - glob: "**/*.py"
     weight: 2
 threshold: 5
@@ -24,7 +28,7 @@ threshold: 5
 | Validation | Pydantic v2 models | request/response + serialization |
 | DB | SQLAlchemy (async) or SQLModel | Alembic for migrations |
 | API docs | OpenAPI auto-generated | Keep `response_model` accurate |
-| Auth | python-jose (JWT) or fastapi-users | |
+| Auth | PyJWT or authlib (JWT) / fastapi-users | `python-jose` is unmaintained — use PyJWT or authlib |
 | Rate limiting | slowapi | Redis-backed for multi-instance |
 
 | Pattern | Rule |
@@ -40,6 +44,9 @@ threshold: 5
 |-------------|-----------|
 | Testing | skills/SKILL.md#testing |
 | Async patterns | skills/SKILL.md#async |
-| Security | skills/SKILL.md#security |
+| Security + JWT auth | skills/SKILL.md#security |
+| Resilience + retries | skills/SKILL.md#resilience |
 | Logging | skills/SKILL.md#logging |
 | Database | skills/SKILL.md#database |
+| Migrations | skills/SKILL.md#migrations |
+| Performance | skills/SKILL.md#performance |

@@ -1,10 +1,14 @@
 ---
-description: Interactive onboarding walkthrough — detect stack, show toolkit, give personalized first-step recommendation
+description: Show the claude-chameleon toolkit for this project and recommend a first action. Run /explore first if profiles aren't set up yet.
 depth: deep
 ---
 
 > **Before proceeding**: invoke the `stack-orchestrator` agent with the current task.
 > Only continue once it confirms profiles are loaded or generic mode is active.
+> Parse active profiles and commands from the `<<<FORGE_HANDOFF>>>` block in its output.
+> If the orchestrator enters generic mode (no `<<<FORGE_HANDOFF>>>` block), proceed without profile-specific context.
+
+> **Order matters**: `/explore` maps the codebase and activates stack profiles. `/onboard` shows what Claude can do with those profiles. Run `/explore` first on a new project, then `/onboard`.
 
 Run interactive onboarding for this project.
 
@@ -34,4 +38,4 @@ Steps:
    - No security audit? → `/scan`
    - Ready to build? → `/tdd <feature>`
 
-Onboarding is only useful if it's specific to the actual stack. Generic mode onboarding must clearly say "no profiles active — run `./install.sh --detect` to configure your stack."
+Onboarding is only useful if it's specific to the actual stack. Generic mode onboarding must clearly say "no profiles active — run `/explore` to configure your stack."

@@ -1,8 +1,8 @@
 ---
 name: architect
 description: System design specialist. Researches solutions, designs architecture, creates phased implementation plans with trade-off analysis and ADRs. The thinking agent — research + design + plan in one. Use before building anything non-trivial.
-tools: Read, Grep, Glob, Bash, Agent, WebSearch, WebFetch
-model: claude-opus-4-7
+tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
+model: opus
 ---
 
 # Architect Agent

@@ -3,7 +3,7 @@ name: prisma
 displayName: Prisma ORM
 detectors:
   - file: prisma/schema.prisma
-    weight: 5
+    weight: 4
   - file-contains: [package.json, "\"@prisma/client\""]
     weight: 3
   - glob: "prisma/migrations/**"
@@ -23,7 +23,7 @@ threshold: 5
 |---------|------|
 | Model naming | PascalCase singular (`User`, not `users`) |
 | Fields | `@map` for snake_case DB columns |
-| IDs | `@default(cuid())` preferred |
+| IDs | `@default(cuid(2))` or `@default(uuid(7))` (time-ordered, Prisma 5.14+) |
 | Timestamps | Always include `createdAt DateTime @default(now())` and `updatedAt DateTime @updatedAt` |
 | Indexes | `@@index([field])` for any column used in `.where()` or `.orderBy()` |
 | Expand-contract | Breaking schema changes: add first, migrate, update code, drop old — never rename+deploy atomically |

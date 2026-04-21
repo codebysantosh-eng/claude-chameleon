@@ -10,6 +10,16 @@
           }
         ],
         "matcher": "Write"
+      },
+      {
+        "hooks": [
+          {
+            "id": "forge.prisma.schema-change-remind-edit",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/prisma/hooks/schema-change-remind.js"
+          }
+        ],
+        "matcher": "Edit"
       }
     ]
   }

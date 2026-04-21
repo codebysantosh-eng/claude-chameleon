@@ -3,7 +3,12 @@
  * forge.nextjs.next-public-secret-guard
  * Blocks NEXT_PUBLIC_ prefix on server-only secrets.
  */
-const input = JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8'));
+let raw = '';
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', chunk => { raw += chunk; });
+process.stdin.on('end', () => { run(JSON.parse(raw)); });
+
+function run(input) {
 
 const tool = input.tool_name;
 const toolInput = input.tool_input || {};
@@ -16,16 +21,22 @@ const serverSecretPatterns = [
   'AWS_SECRET', 'OPENAI_API_KEY',
 ];
 
-if (tool === 'Write' && (filePath.includes('.env') || filePath.includes('config'))) {
-  const lines = content.split('\n');
+const contentToCheck = tool === 'Write' ? content
+  : tool === 'Edit' ? (toolInput.new_string || '')
+  : '';
+
+if (contentToCheck) {
+  const lines = contentToCheck.split('\n');
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    if (line.startsWith('NEXT_PUBLIC_')) {
-      const varName = line.split('=')[0].replace('NEXT_PUBLIC_', '');
+    // Match NEXT_PUBLIC_ in env files (NEXT_PUBLIC_FOO=...) and source files (process.env.NEXT_PUBLIC_FOO)
+    const match = line.match(/NEXT_PUBLIC_([A-Z0-9_]+)/);
+    if (match) {
+      const varName = match[1];
       if (serverSecretPatterns.some(p => varName.toUpperCase().includes(p))) {
         console.log(JSON.stringify({
           decision: 'block',
-          reason: `NEXT_PUBLIC_${varName} detected on line ${i + 1}. NEXT_PUBLIC_ variables are exposed to the browser. Server-side secrets must never use this prefix.`
+          reason: `NEXT_PUBLIC_${varName} detected on line ${i + 1} in ${filePath}. NEXT_PUBLIC_ variables are exposed to the browser. Server-side secrets must never use this prefix.`
         }));
         process.exit(0);
       }
@@ -34,3 +45,4 @@ if (tool === 'Write' && (filePath.includes('.env') || filePath.includes('config'
 }
 
 console.log(JSON.stringify({ decision: 'approve' }));
+}

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/santoshreddymaddula/Projects/claude-chameleon log --oneline -10)",
+      "Bash(python3 -c \" import sys, json data = sys.stdin.read\\(\\) import re matches = re.findall\\(r'<result>\\(.*?\\)</result>', data, re.DOTALL\\) if matches: print\\(matches[-1][:6000]\\) \")"
+    ]
+  }
+}

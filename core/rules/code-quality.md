@@ -34,7 +34,7 @@ Create new objects. Never mutate. Use language-idiomatic immutable patterns (spr
 - Use structured logging — never raw print/console statements in production
 - Include: log levels (error, warn, info, debug), correlation IDs, structured output
 - See active profile's `context.md` for the stack-specific logging library
-- See `rules/testing.md` for logging standards in tests
+- See `~/.claude/rules/testing.md` for logging standards in tests
 
 ## Forbidden in Source Code
 

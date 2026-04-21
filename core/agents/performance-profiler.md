@@ -2,7 +2,7 @@
 name: performance-profiler
 description: Performance optimization specialist. Profiles code for algorithmic, database, bundle, and memory bottlenecks. Measures baseline → identifies → fixes → measures again. Data-driven improvements only.
 tools: Read, Grep, Glob, Bash, Edit
-model: claude-sonnet-4-6
+model: sonnet
 ---
 
 # Performance Profiler Agent

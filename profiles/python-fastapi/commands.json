@@ -3,12 +3,14 @@
   "filePatterns": ["**/*.py"],
   "commands": {
     "test": "pytest --cov --cov-report=term",
-    "lint": "ruff check . && black --check .",
+    "lint": "ruff check .",
     "format": "black .",
     "typecheck": "mypy .",
-    "build": null,
+    "build": "python -m compileall -q .",
     "audit": "pip audit",
     "e2e": "playwright test",
-    "coverage": "pytest --cov --cov-report=term-missing"
+    "coverage": "pytest --cov --cov-report=term-missing",
+    "format-check": "black --check .",
+    "logs": "tail -f logs/*.log 2>/dev/null || journalctl --user -f"
   }
 }

@@ -10,6 +10,16 @@
           }
         ],
         "matcher": "Write"
+      },
+      {
+        "hooks": [
+          {
+            "id": "forge.php-symfony.var-dump-warn-edit",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/php-symfony/hooks/var-dump-warn.js"
+          }
+        ],
+        "matcher": "Edit"
       }
     ]
   }

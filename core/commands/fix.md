@@ -3,6 +3,8 @@ description: Diagnose and fix build, type, and compile errors with minimal chang
 depth: routine
 ---
 
+> **Stack context**: If `.forge.yaml` exists at the project root, active profile rules apply. If not, run `/explore` first — this command continues in generic mode without stack-specific guidance.
+
 Use the `error-resolver` agent to fix the current build errors.
 
 $ARGUMENTS

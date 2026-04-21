@@ -3,12 +3,14 @@
   "filePatterns": ["src/**/*.php", "templates/**/*.twig", "config/**/*.yaml", "config/**/*.yml"],
   "commands": {
     "test": "composer test",
-    "lint": "php-cs-fixer fix --dry-run --diff",
+    "lint": "php-cs-fixer fix --dry-run --diff --verbose",
     "format": "php-cs-fixer fix",
     "typecheck": "phpstan analyse",
     "build": "composer install --no-dev --optimize-autoloader",
     "audit": "composer audit",
     "e2e": "php bin/console d:s:v && composer test -- --testsuite=e2e",
-    "coverage": "composer test -- --coverage-text"
+    "coverage": "composer test -- --coverage-text",
+    "format-check": "php-cs-fixer fix --dry-run",
+    "logs": "tail -f var/log/dev.log"
   }
 }

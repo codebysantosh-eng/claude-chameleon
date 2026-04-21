@@ -30,6 +30,26 @@
           }
         ],
         "matcher": "Write"
+      },
+      {
+        "hooks": [
+          {
+            "id": "forge.core.secret-detector-edit",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/core/hooks/scripts/secret-detector.js"
+          }
+        ],
+        "matcher": "Edit"
+      },
+      {
+        "hooks": [
+          {
+            "id": "forge.core.secret-detector-bash",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/core/hooks/scripts/secret-detector.js"
+          }
+        ],
+        "matcher": "Bash"
       }
     ],
     "PostToolUse": [
@@ -42,6 +62,16 @@
           }
         ],
         "matcher": "Write"
+      },
+      {
+        "hooks": [
+          {
+            "id": "forge.core.large-file-warn-edit",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/core/hooks/scripts/large-file-warn.js"
+          }
+        ],
+        "matcher": "Edit"
       },
       {
         "hooks": [

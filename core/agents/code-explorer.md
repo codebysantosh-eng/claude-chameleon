@@ -2,7 +2,7 @@
 name: code-explorer
 description: Codebase mapping specialist. Explores and maps unfamiliar codebases. Generates onboarding guides and CLAUDE.md files. Use when joining a new project or first time in a repo.
 tools: Read, Grep, Glob, Bash
-model: claude-sonnet-4-6
+model: sonnet
 ---
 
 # Code Explorer Agent

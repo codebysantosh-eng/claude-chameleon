@@ -3,6 +3,8 @@ description: Restructure existing code safely — one change at a time, tests st
 depth: routine
 ---
 
+> **Stack context**: If `.forge.yaml` exists at the project root, active profile rules apply. If not, run `/explore` first — this command continues in generic mode without stack-specific guidance.
+
 Refactor the following safely:
 
 $ARGUMENTS

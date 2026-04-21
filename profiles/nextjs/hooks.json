@@ -10,6 +10,16 @@
           }
         ],
         "matcher": "Write"
+      },
+      {
+        "hooks": [
+          {
+            "id": "forge.nextjs.next-public-secret-guard-edit",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/nextjs/hooks/next-public-secret-guard.js"
+          }
+        ],
+        "matcher": "Edit"
       }
     ]
   }

@@ -5,6 +5,8 @@ depth: deep
 
 > **Before proceeding**: invoke the `stack-orchestrator` agent with the current task.
 > Only continue once it confirms profiles are loaded or generic mode is active.
+> Parse active profiles and commands from the `<<<FORGE_HANDOFF>>>` block in its output.
+> If the orchestrator enters generic mode (no `<<<FORGE_HANDOFF>>>` block), proceed without profile-specific context.
 
 Use the `security-scanner` agent to audit:
 

@@ -3,7 +3,12 @@
  * forge.core.env-gitignore-guard
  * Warns when a .env file is created without a corresponding .gitignore entry.
  */
-const input = JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8'));
+let raw = '';
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', chunk => { raw += chunk; });
+process.stdin.on('end', () => { run(JSON.parse(raw)); });
+
+function run(input) {
 const fs = require('fs');
 const path = require('path');
 
@@ -23,12 +28,21 @@ if (tool === 'Write' && filePath && path.basename(filePath).startsWith('.env')) 
   }
 
   const envBase = path.basename(filePath);
-  if (!gitignoreContent.includes(envBase) && !gitignoreContent.includes('.env')) {
+  // Parse gitignore line-by-line; ignore negated patterns (e.g. !.env.example) and comments
+  const lines = gitignoreContent.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+  const protects = p => lines.some(l =>
+    !l.startsWith('!') && (l === p || l === `/${p}` || l === '.env' || l === '/.env' || l === '.env*' || l === '*.env')
+  );
+  if (!protects(envBase)) {
+    // Combine warning + approve into one JSON object — hook runner expects exactly one output.
     console.log(JSON.stringify({
+      decision: 'approve',
       type: 'warning',
       message: `${filePath} created but not found in .gitignore. Add it now to prevent accidental secret exposure:\n  echo "${envBase}" >> ${gitignorePath}`
     }));
+    return;
   }
 }
 
 console.log(JSON.stringify({ decision: 'approve' }));
+}

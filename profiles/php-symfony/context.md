@@ -20,7 +20,7 @@ threshold: 5
 | Static analysis | phpstan (level 8+) | Strict type checking |
 | Refactor | rector | Automated upgrades and refactoring |
 | Logger | Monolog (symfony/monolog-bundle) | Never var_dump() or dd() |
-| ORM | Doctrine ORM | Never raw SQL without DQL |
+| ORM | Doctrine ORM | Never raw SQL; use DQL or the ORM |
 | Validation | Symfony Validator component | Annotations or YAML |
 | Auth | symfony/security-bundle | Never roll custom auth |
 | Secrets | symfony/dotenv + env vars | No hardcoded values |
@@ -44,3 +44,5 @@ threshold: 5
 | Doctrine | skills/SKILL.md#doctrine |
 | Logging | skills/SKILL.md#logging |
 | DI and Services | skills/SKILL.md#services |
+| Resilience + retries | skills/SKILL.md#resilience |
+| Performance | skills/SKILL.md#performance |

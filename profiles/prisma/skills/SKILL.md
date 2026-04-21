@@ -10,7 +10,7 @@ Deep reference for Prisma patterns. Load specific sections on demand.
 
 ```prisma
 model User {
-  id        String   @id @default(cuid())
+  id        String   @id @default(cuid(2))
   email     String   @unique
   name      String?
   role      Role     @default(USER)
@@ -32,7 +32,7 @@ enum Role {
 
 ```prisma
 model Post {
-  id       String @id @default(cuid())
+  id       String @id @default(cuid(2))
   title    String
   content  String
   authorId String

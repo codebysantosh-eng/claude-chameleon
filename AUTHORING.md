@@ -6,7 +6,7 @@ This guide covers everything needed to add a new tech stack profile from scratch
 
 ## Profile Structure
 
-Each profile is a directory under `profiles/<your-stack>/` with exactly 5 files:
+Each profile is a directory under `profiles/<your-stack>/` with 5 required files plus optional additions:
 
 ```
 profiles/<your-stack>/
@@ -14,7 +14,9 @@ profiles/<your-stack>/
 ├── context.md        # markdown tables + frontmatter, on-demand deep tasks
 ├── commands.json     # machine-readable command map
 ├── hooks.json        # stack-specific safety hooks
-└── skills/SKILL.md   # deep reference with named ## sections
+├── skills/SKILL.md   # deep reference with named ## sections
+├── hooks/            # (optional) hook script implementations
+└── mcp.json          # (optional) MCP server declarations
 ```
 
 ---
@@ -22,7 +24,7 @@ profiles/<your-stack>/
 ## Step 1: Create the directory
 
 ```bash
-mkdir -p profiles/<your-stack>/skills
+mkdir -p profiles/<your-stack>/{skills,hooks}
 ```
 
 ---
@@ -82,7 +84,7 @@ threshold: 5
 
 ## Step 3: Write `rules.md` (~4 lines max)
 
-Installed into `~/.claude/rules/profile-<name>.md`. **Loads every session for every command.** Keep it tiny.
+Installed into `~/.claude/rules/<name>.md`. **Loads every session for every command.** Keep it tiny.
 
 ```markdown
 # Active Stack: <Name>
@@ -100,7 +102,7 @@ Rules:
 
 ## Step 4: Write `commands.json`
 
-Machine-readable. Never loaded as LLM context. Used by `forge-installer.js` and `forge-ci-runner.js`.
+Machine-readable. Never loaded as LLM context. Used by `activate-profiles.js` and `forge-ci-runner.js`.
 
 ```json
 {
@@ -110,14 +112,23 @@ Machine-readable. Never loaded as LLM context. Used by `forge-installer.js` and 
     "test": "<test command>",
     "lint": "<lint command>",
     "format": "<format command>",
+    "format-check": "<format check command — must exit non-zero if files are unformatted>",
     "typecheck": "<typecheck command or null>",
     "build": "<build command or null>",
     "audit": "<audit command>",
     "e2e": "<e2e command or null>",
-    "coverage": "<coverage command>"
+    "coverage": "<coverage command>",
+    "logs": "<command to tail/view app logs — used by /incident during triage>"
   }
 }
 ```
+
+**Required vs optional keys** (JSON cannot carry comments — use this table as the source of truth):
+
+| Status | Keys |
+|--------|------|
+| Required — must be present (may be `null` for ORM/library profiles) | `test`, `lint`, `format`, `build`, `audit`, `coverage`, `format-check`, `logs` |
+| Optional — may be omitted entirely | `typecheck`, `e2e` |
 
 **Multi-profile collision tiebreaker**: if two profiles' `filePatterns` match the same file, the profile listed **first in `.forge.yaml`** wins. Users order profiles by priority. Path-based patterns (`src/**/*.js`) take priority over extension-only patterns (`**/*.js`).
 
@@ -144,12 +155,14 @@ All hook IDs **must** follow `forge.<profile-name>.<hook-name>` — never just `
         "matcher": "Write"
       }
     ],
-    "PostToolUse": [...]
+    "PostToolUse": []
   }
 }
 ```
 
-Use `{{FORGE_ROOT}}` as a placeholder — `forge-installer.js` resolves it to the actual path at install time.
+(Add `PostToolUse` or `Stop` entries here if needed — same structure as `PreToolUse`.)
+
+Use `{{FORGE_ROOT}}` as a placeholder — `activate-profiles.js` resolves it to the actual path at activation time.
 
 Hook scripts must read stdin as JSON (Claude Code passes tool input via stdin), emit a JSON decision, and exit 0.
 
@@ -163,7 +176,46 @@ console.log(JSON.stringify({ decision: 'approve' }));  // or 'block' with 'reaso
 
 ---
 
-## Step 6: Write `skills/SKILL.md`
+## Step 6 (optional): Write `mcp.json`
+
+Declares MCP servers that activate alongside the profile. Only include this file if a specific MCP server meaningfully benefits this stack.
+
+```json
+{
+  "mcpServers": {
+    "<server-name>": {
+      "command": "npx",
+      "args": ["-y", "<mcp-package>", "$DATABASE_URL"]
+    }
+  },
+  "env_vars": ["DATABASE_URL"]
+}
+```
+
+**Two placeholder styles — use the right one for secrets:**
+
+| Style | Example | When to use |
+|-------|---------|-------------|
+| `$VAR_NAME` | `"$DATABASE_URL"` | **Secrets** — resolved at MCP server startup from `process.env`; never written to settings.json |
+| `{{VAR_NAME}}` | `"{{PROJECT_ROOT}}"` | **Non-sensitive build-time values** — resolved at activation time; written into settings.json |
+
+Use `$VAR_NAME` for any credential or token. Use `{{VAR_NAME}}` only for things like paths or project names that are safe to store.
+
+If a `$VAR_NAME` env var is absent at activation time, the server is registered but warns at startup. If a `{{VAR_NAME}}` placeholder is unresolved, **that server is skipped** and the user is warned. Activation of the rest of the profile continues.
+
+**Which MCP servers are appropriate per stack:**
+
+| Stack | Server | Secret required? |
+|-------|--------|-----------------|
+| `prisma` | `@prisma/mcp-server` | No — reads `prisma/schema.prisma` from cwd |
+| `nextjs` | `@playwright/mcp` | No — browser automation |
+| `python-django` / `python-fastapi` | `@modelcontextprotocol/server-postgres` | Yes — `DATABASE_URL` |
+
+Avoid adding MCP servers that duplicate what hooks already provide or that require secrets not commonly available in `.env` files.
+
+---
+
+## Step 7: Write `skills/SKILL.md`
 
 Prose + code examples. Named `## heading` sections — `context.md` references these by anchor.
 
@@ -184,21 +236,23 @@ Rules:
 - Use prose + code examples (not tables) — code must be readable to be applied
 - Name sections with `##` anchors matching what `context.md` references
 - Each section should be self-contained — agents load one section at a time
+- Keep each `##` section focused on one concern and under ~200 tokens (~800 chars); split multi-topic sections (e.g. `## resilience-http` and `## resilience-queue`) so agents load only what they need
 
 ---
 
 ## Checklist before submitting
 
-- [ ] All 5 files present (rules.md, context.md, commands.json, hooks.json, skills/SKILL.md)
+- [ ] Required files present: rules.md, context.md, commands.json, hooks.json, skills/SKILL.md
+- [ ] `commands.json` has all 8 required keys present: `test`, `lint`, `format`, `build`, `audit`, `coverage`, `format-check`, `logs` (may be `null` for ORM/library profiles; `typecheck` and `e2e` may be omitted entirely)
+- [ ] Any scripts referenced in `hooks.json` exist under `hooks/`
+- [ ] Optional mcp.json uses `$VAR_NAME` (not `{{VAR_NAME}}`) for any secret args so credentials are never written to settings.json
 - [ ] Hook IDs namespaced `forge.<profile-name>.<hook-name>`
 - [ ] `rules.md` ≤ 4 lines
 - [ ] `context.md` uses markdown tables (not key-value, not prose)
 - [ ] `skills/SKILL.md` has named `##` sections that `context.md` references by anchor
 - [ ] Detector threshold requires 2+ signals (no single-file activation)
-- [ ] **Tested on 2+ real projects WITH this stack** — `./install.sh --detect --project <real-project>` activates the profile
-- [ ] **Tested on 2+ real projects WITHOUT this stack** — score stays below threshold
+- [ ] **Detector passes the automated test suite** — add your profile's fixture to `profiles/tests/run-tests.sh` (positive + negative case) and verify `./profiles/tests/run-tests.sh detect` passes
 - [ ] `file-contains` patterns cover all common dependency file formats for this stack
-- [ ] Added profile to `profiles/tests/run-tests.sh`
 - [ ] Secret patterns (if any) extend, not replace, `core/hooks/scripts/secret-detector.js`
 
 ---
@@ -243,13 +297,9 @@ Keep `context.md` to 2–3 markdown tables (~20 rows max). Move detailed pattern
 
 `rules.md` loads every session including git commits. Keep it to 4 lines max. Everything else belongs in `context.md`.
 
-### 6. Forgetting `response_model` on FastAPI routes
+### 6. Not testing detectors before submitting
 
-Always declare `response_model` — the OpenAPI docs and response serialization depend on it.
-
-### 7. Not testing detectors before submitting
-
-Run `./install.sh --detect --project <real-django-project>` and verify the score. Then run against a TypeScript-only project and verify score is below threshold.
+Run `node install/activate-profiles.js --project <real-django-project> --dry-run` and verify the detected profiles. Then run against a TypeScript-only project and verify the Django profile is not listed.
 
 ---
 
@@ -261,4 +311,6 @@ claude-chameleon uses symlinks only — no copy mode. Once installed, a `git pul
 
 ## Hook ID collision resolution
 
-If two profiles use the same file extension (e.g., both `python-django` and `python-fastapi` active with `.py` files), the profile listed **first in `.forge.yaml`** wins for command routing. Hooks from both profiles coexist in `settings.json` and fire independently. Uninstall one profile: `./uninstall.sh --profile python-django`. Wipe forge entirely: `./uninstall.sh`.
+If two profiles use the same file extension (e.g., both `python-django` and `python-fastapi` active with `.py` files), the profile listed **first in `.forge.yaml`** wins for command routing. Hooks from both profiles coexist in `settings.json` and fire independently.
+
+To remove all profiles from a project: `./uninstall.sh --project <path>`. To remove a single profile, edit `.forge.yaml` to remove that profile name, then re-run `/explore` to re-activate and prune stale symlinks. Wipe forge core entirely: `./uninstall.sh`.

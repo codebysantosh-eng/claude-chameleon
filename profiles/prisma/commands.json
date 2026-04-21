@@ -7,10 +7,12 @@
     "format": "npx prisma format",
     "typecheck": null,
     "build": "npx prisma generate",
-    "audit": null,
+    "audit": "npm audit --production",
     "e2e": null,
-    "coverage": null,
+    "coverage": "npx prisma validate",
     "migrate": "npx prisma migrate dev",
-    "deploy": "npx prisma migrate deploy"
+    "deploy": "npx prisma migrate deploy",
+    "format-check": "npx prisma format --check",
+    "logs": "npx prisma studio"
   }
 }

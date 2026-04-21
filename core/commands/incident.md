@@ -5,6 +5,8 @@ depth: deep
 
 > **Before proceeding**: invoke the `stack-orchestrator` agent with the current task.
 > Only continue once it confirms profiles are loaded or generic mode is active.
+> Parse active profiles and commands from the `<<<FORGE_HANDOFF>>>` block in its output.
+> If the orchestrator enters generic mode (no `<<<FORGE_HANDOFF>>>` block), proceed without profile-specific context.
 
 Initiate incident response for:
 
@@ -16,7 +18,11 @@ $ARGUMENTS
 - Start time: when did it begin
 
 ## Phase 2: Diagnose
-- Check logs for errors (use profile's structured logging)
+- Check logs for errors:
+  1. Check active profile's `commands.json` for a `logs` command — use it if defined
+  2. Otherwise check for a `LOG_PATH` or `LOG_DIR` env var in the project
+  3. Otherwise use stack defaults: Node → `pm2 logs` or `journalctl -u <service>`; Django/FastAPI → `journalctl` or app log file; PHP → `tail -f storage/logs/laravel.log`
+  4. If none apply, ask the user where logs are before proceeding
 - Check recent deploys (`git log --oneline -10`)
 - Check dependencies / external services
 - Identify the likely root cause

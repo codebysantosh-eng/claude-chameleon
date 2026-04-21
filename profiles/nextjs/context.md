@@ -41,4 +41,5 @@ threshold: 5
 | Server Actions | skills/SKILL.md#server-actions |
 | Security | skills/SKILL.md#security |
 | Testing | skills/SKILL.md#testing |
+| Resilience + retries | skills/SKILL.md#resilience |
 | Performance | skills/SKILL.md#performance |

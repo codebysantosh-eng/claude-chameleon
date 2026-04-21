@@ -91,11 +91,11 @@ export const dynamic = 'force-dynamic';
 ```tsx
 // app/actions/post.ts
 'use server';
-import { getServerSession } from 'next-auth';
+import { auth } from '@/auth'; // Auth.js v5 — replaces getServerSession
 
 export async function deletePost(postId: string) {
   // 1. Auth FIRST — before reading any data
-  const session = await getServerSession();
+  const session = await auth();
   if (!session) return { error: 'Not authenticated' };
 
   const post = await db.post.findUnique({ where: { id: postId } });
@@ -180,8 +180,10 @@ NEXT_PUBLIC_JWT_SECRET=...                # compromises all auth tokens!
 
 ```typescript
 // app/api/admin/route.ts
+import { auth } from '@/auth'; // Auth.js v5
+
 export async function GET(request: Request) {
-  const session = await getServerSession();
+  const session = await auth();
   if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   if (session.user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
@@ -193,23 +195,38 @@ export async function GET(request: Request) {
 
 ## testing
 
-### Testing Server Components
+### Server Components — test the logic, not the rendering
 
-```tsx
-// Use React's renderToString or test the data fetching logic separately
-import { render } from '@testing-library/react';
+There is no stable way to unit-test async React Server Components directly. Use two strategies instead:
 
-// For async Server Components, wrap in a helper
-async function renderServerComponent(component: JSX.Element) {
-  const html = await renderToString(component);
-  return parse(html); // use html-react-parser
+**Strategy 1 — test the data layer in isolation** (covers most logic):
+```typescript
+// lib/posts.ts — pure async function, testable without React
+export async function getPost(id: string) {
+  return db.post.findUnique({ where: { id }, include: { author: true } });
 }
+
+// __tests__/lib/posts.test.ts
+import { getPost } from '@/lib/posts';
+it('returns null for missing post', async () => {
+  await expect(getPost('missing-id')).resolves.toBeNull();
+});
 ```
 
-### Testing with @testing-library/react
+**Strategy 2 — Playwright for integration** (covers the full RSC render path):
+```typescript
+// e2e/post-page.spec.ts
+import { test, expect } from '@playwright/test';
+test('post page renders title', async ({ page }) => {
+  await page.goto('/posts/1');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('My Post');
+});
+```
+
+### Client Components with @testing-library/react
 
 ```tsx
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 it('shows error when email is invalid', async () => {
@@ -221,6 +238,106 @@ it('shows error when email is invalid', async () => {
 
   expect(screen.getByRole('alert')).toHaveTextContent('Invalid email');
 });
+```
+
+### Server Actions — test via Playwright or by calling the action directly
+
+```typescript
+// app/actions/post.ts exports a plain async function — call it directly in tests
+import { deletePost } from '@/app/actions/post';
+
+it('rejects unauthenticated delete', async () => {
+  // mock auth() to return null (Auth.js v5)
+  vi.mock('@/auth', () => ({ auth: vi.fn(() => null) }));
+  const result = await deletePost('post-1');
+  expect(result).toEqual({ error: 'Not authenticated' });
+});
+```
+
+---
+
+## resilience
+
+### fetch with timeout (AbortController)
+
+```typescript
+// lib/fetch.ts
+export async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 5000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
+    return res;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+```
+
+### Exponential backoff for external API calls
+
+```typescript
+export async function fetchWithRetry(
+  url: string,
+  options: RequestInit = {},
+  { retries = 3, baseDelayMs = 200 }: { retries?: number; baseDelayMs?: number } = {}
+): Promise<Response> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetchWithTimeout(url, options);
+      return res;
+    } catch (err) {
+      if (attempt === retries) throw err;
+      // Only retry on network errors and 5xx; never on 4xx
+      if (err instanceof Error && err.name === 'AbortError') throw err;
+      await new Promise(r => setTimeout(r, baseDelayMs * 2 ** attempt));
+    }
+  }
+  throw new Error('unreachable');
+}
+```
+
+### Route-level error boundary with logging
+
+```tsx
+// app/dashboard/error.tsx — catches errors thrown in this route segment
+'use client';
+import { useEffect } from 'react';
+
+export default function DashboardError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    // Send to your error tracking service (Sentry.captureException, Datadog, etc.)
+    reportError(error);
+  }, [error]);
+
+  return (
+    <div role="alert">
+      <p>Something went wrong.</p>
+      <button onClick={reset}>Try again</button>
+    </div>
+  );
+}
+```
+
+### next.config.js — recommended production settings
+
+```javascript
+// next.config.js
+module.exports = {
+  experimental: {
+    serverActionsBodySizeLimit: '2mb', // increase for file upload actions
+  },
+  async headers() {
+    return [{ source: '/api/:path*', headers: [{ key: 'Cache-Control', value: 'no-store' }] }];
+  },
+};
 ```
 
 ---

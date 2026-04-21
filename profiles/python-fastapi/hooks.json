@@ -10,6 +10,26 @@
           }
         ],
         "matcher": "Write"
+      },
+      {
+        "hooks": [
+          {
+            "id": "forge.python-fastapi.print-warn-edit",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/python-fastapi/hooks/print-warn.js"
+          }
+        ],
+        "matcher": "Edit"
+      },
+      {
+        "hooks": [
+          {
+            "id": "forge.python-fastapi.coverage-threshold-warn",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/python-fastapi/hooks/coverage-threshold-warn.js"
+          }
+        ],
+        "matcher": "Bash"
       }
     ]
   }

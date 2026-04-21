@@ -3,6 +3,8 @@ description: Retroactively add missing test coverage to existing code
 depth: routine
 ---
 
+> **Stack context**: If `.forge.yaml` exists at the project root, active profile rules apply. If not, run `/explore` first — this command continues in generic mode without stack-specific guidance.
+
 Add missing tests to:
 
 $ARGUMENTS
@@ -16,6 +18,8 @@ Workflow:
 4. Map source files → test files (find gaps)
 5. Run existing tests to confirm green baseline
 6. Add tests for uncovered behaviour — match existing conventions exactly
-7. Run coverage check against targets in `rules/testing.md`
+7. Run coverage check against targets in `~/.claude/rules/testing.md`
 
 Test what the code does, not how it does it. One behaviour per test. Independent tests — no shared mutable state.
+
+**Do not write or modify production code.** If missing coverage requires new production logic, stop and flag it — that is `/tdd` work, not `/add-tests` work.

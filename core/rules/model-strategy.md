@@ -1,42 +1,13 @@
 # Model Strategy
 
-## Model Selection
+**Default model**: Sonnet for all tasks. Escalate to Opus only for architectural decisions and deep analysis. Use Haiku for lightweight worker agents.
 
-Choose the right Claude model for the task:
+**Context window**: When context is getting long, use `/explore` to generate a CLAUDE.md, then start a fresh session.
 
-| Model | Cost | Best For |
-|-------|------|----------|
-| **Haiku 4.5** | Lowest | Lightweight agents, pair programming, worker agents in multi-agent systems. 90% of Sonnet capability at 3x cost savings. |
-| **Sonnet 4.6** | Mid | Main development work, code generation, multi-agent orchestration, complex coding tasks. Best coding model. |
-| **Opus 4.7** | Highest | Architectural decisions, deep reasoning, research, analysis. Use when quality of thought matters more than speed. |
+**Extended thinking**: On by default. Disable for simple edits and formatting to save tokens.
 
-**Default**: Use Sonnet unless the task requires deep reasoning (→ Opus) or is lightweight/repetitive (→ Haiku).
-
-## Context Window Management
-
-Avoid the last 20% of context window for:
-- Large-scale refactoring (many files)
-- Feature implementation spanning multiple files
-- Debugging complex cross-file interactions
-
-Lower context sensitivity (safe even near limits):
-- Single-file edits
-- Independent utility creation
-- Documentation updates
-- Simple bug fixes
-
-**When context is getting long**: Use `/explore` to generate a CLAUDE.md, then start a new session with that context.
-
-## Extended Thinking
-
-Extended thinking is enabled by default.
-
-**Use extended thinking for**: Architectural decisions, complex debugging, multi-step planning.
-**Disable for**: Simple edits, formatting, documentation — saves tokens.
-
-## Agent Cost Awareness
-
-- Flag workflows that escalate to Opus without clear reasoning need
-- Default to Sonnet for code generation and review
-- Use Haiku for repetitive worker tasks (formatting, simple checks)
-- Batch similar operations instead of invoking agents per-file
+| Model | Use when |
+|-------|----------|
+| Haiku 4.5 | Repetitive worker tasks, simple checks, pair programming assist |
+| Sonnet 4.6 | Default — code generation, review, orchestration |
+| Opus 4.7 | Architecture, deep reasoning, complex debugging |

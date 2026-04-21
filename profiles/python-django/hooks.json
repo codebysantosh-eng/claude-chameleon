@@ -14,6 +14,16 @@
       {
         "hooks": [
           {
+            "id": "forge.python-django.print-warn-edit",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/python-django/hooks/print-warn.js"
+          }
+        ],
+        "matcher": "Edit"
+      },
+      {
+        "hooks": [
+          {
             "id": "forge.python-django.coverage-threshold-warn",
             "type": "command",
             "command": "node {{FORGE_ROOT}}/profiles/python-django/hooks/coverage-threshold-warn.js"

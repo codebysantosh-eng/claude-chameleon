@@ -2,7 +2,7 @@
 name: e2e-runner
 description: End-to-end testing specialist. Creates, maintains, and executes E2E tests for critical user journeys. Manages flaky tests, captures artifacts, and integrates with CI/CD.
 tools: Read, Write, Edit, Bash, Grep, Glob
-model: claude-sonnet-4-6
+model: sonnet
 ---
 
 # E2E Runner Agent
@@ -64,13 +64,7 @@ Verify E2E tests run in CI:
 
 ## Stack Adaptation
 
-E2E frameworks vary by stack:
-- TypeScript/Next.js → typically Playwright
-- Python → typically Playwright or Selenium
-- PHP → typically Cypress or Playwright
-- Rails → typically Capybara
-
-Always check the active profile's `commands.json` `e2e` key and `skills/SKILL.md` before assuming the framework.
+Always check the active profile's `commands.json` `e2e` key and `skills/SKILL.md` to determine the framework — don't assume.
 
 ## Output Format
 

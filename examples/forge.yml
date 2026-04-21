@@ -1,0 +1,32 @@
+# .github/workflows/forge.yml
+# Copy this file to your project's .github/workflows/ directory.
+# Runs forge CI checks for every active profile declared in .forge.yaml.
+
+name: Forge CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  forge:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Clone claude-chameleon
+        run: |
+          git clone https://github.com/your-org/claude-chameleon.git "$HOME/claude-chameleon"
+
+      - name: Run forge CI
+        # NOTE: replace "your-org" in the clone step above with your GitHub org/user.
+        # FORGE_ROOT is set inline so $HOME is shell-expanded (env: block does not expand variables).
+        run: |
+          export FORGE_ROOT="$HOME/claude-chameleon"
+          node "$FORGE_ROOT/install/forge-ci-runner.js"

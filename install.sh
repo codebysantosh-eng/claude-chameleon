@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
-# install.sh — thin bash wrapper around forge-installer.js
-# claude-chameleon: Claude Code's development kit that adapts to any stack.
+# install.sh — one-time machine setup for claude-chameleon.
+# Installs core agents/commands/rules into ~/.claude and records forge_root.
+# Profile activation happens per-project via /explore.
 #
 # Usage:
-#   ./install.sh --detect                          # auto-detect stack
-#   ./install.sh --profile typescript,nextjs       # install specific profiles
-#   ./install.sh --validate                        # health check
-#   ./install.sh --dry-run --detect                # preview without changes
-#   ./install.sh --project ~/my-app --detect       # target a different project
+#   ./install.sh              # install core globally (run once per machine)
+#   ./install.sh --validate   # verify core installation is healthy
+#   ./install.sh --dry-run    # preview without making changes
 
 set -euo pipefail
 
@@ -35,15 +34,16 @@ if [[ "$NODE_VERSION" -lt 20 ]]; then
 fi
 
 # Symlink support check
-if ! ln -s /dev/null /tmp/forge-symlink-test 2>/dev/null; then
+SYMLINK_TEST="$(mktemp -u /tmp/forge-symlink-test-XXXXXX)"
+trap 'rm -f "$SYMLINK_TEST"' EXIT
+if ! ln -s /dev/null "$SYMLINK_TEST" 2>/dev/null; then
   echo "⚠ Symlink creation failed on this system."
   echo "  claude-chameleon requires symlink support (macOS/Linux)."
   exit 1
 fi
-rm -f /tmp/forge-symlink-test
 
 echo "claude-chameleon — Claude Code's development kit that adapts to any stack."
 echo ""
 
-# Pass all arguments to forge-installer.js
-exec node "${SCRIPT_DIR}/install/forge-installer.js" "$@"
+# Pass all arguments to claude-chameleon-setup.js
+exec node "${SCRIPT_DIR}/install/claude-chameleon-setup.js" "$@"

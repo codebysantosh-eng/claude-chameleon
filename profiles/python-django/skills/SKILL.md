@@ -152,6 +152,63 @@ def delete_post(request, post_id):
     return Response(status=204)
 ```
 
+### Session invalidation on logout (Django sessions)
+
+```python
+from django.contrib.auth import logout
+from django.contrib.sessions.models import Session
+from django.utils import timezone
+
+def logout_everywhere(request):
+    """Invalidate all sessions for the current user, not just the current session."""
+    user_sessions = Session.objects.filter(expire_date__gte=timezone.now())
+    for session in user_sessions:
+        data = session.get_decoded()
+        if data.get('_auth_user_id') == str(request.user.pk):
+            session.delete()
+    logout(request)
+
+def logout_current(request):
+    """Invalidate only the current session — rotate the CSRF token too."""
+    request.session.flush()  # deletes and creates new session key
+    # logout() also calls session.flush() but also clears auth
+    logout(request)
+```
+
+### JWT rotation with SimpleJWT (DRF)
+
+```python
+# settings.py
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,      # issue new refresh token on every use
+    'BLACKLIST_AFTER_ROTATION': True,   # invalidate old refresh token immediately
+    'UPDATE_LAST_LOGIN': True,
+}
+
+# Requires: 'rest_framework_simplejwt.token_blacklist' in INSTALLED_APPS
+# + run: python manage.py migrate
+```
+
+```python
+# views.py — explicit logout blacklists the refresh token
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+class LogoutView(APIView):
+    def post(self, request):
+        try:
+            token = RefreshToken(request.data['refresh'])
+            token.blacklist()
+        except Exception:
+            pass  # already invalid — still 200
+        return Response(status=204)
+```
+
 ### Never expose internals in errors
 
 ```python

@@ -29,7 +29,7 @@ threshold: 5
 | Logger | structlog (Django middleware) / loguru (scripts) | Never print() |
 | Validation | Django forms + DRF serializers | Schema at every boundary |
 | Auth | django-allauth or DRF SimpleJWT | Never roll custom auth |
-| Secrets | django-environ or python-decouple | Read from .env at runtime |
+| Secrets | django-environ | Read from .env at runtime; `env('KEY')` raises if missing |
 | ORM | Django ORM | Never raw SQL without parameterization |
 | Migrations | makemigrations + migrate | Dev: makemigrations; Prod: migrate |
 | Test data | bare fixtures (default) | factory_boy for complex object graphs |
@@ -37,7 +37,7 @@ threshold: 5
 
 | Pattern | Rule |
 |---------|------|
-| Views | Class-based views (CBV) preferred for CRUD | Function-based views for one-offs |
+| Views | CBV preferred for CRUD; function-based views for one-offs |
 | URLs | Named URL patterns; use `reverse()` not hardcoded paths |
 | Settings | Split into base/dev/prod; environment-specific via django-environ |
 | Signals | Use sparingly; prefer explicit function calls |
@@ -46,7 +46,7 @@ threshold: 5
 | Skill topic | Reference |
 |-------------|-----------|
 | Testing | skills/SKILL.md#testing |
-| Security | skills/SKILL.md#security |
-| ORM patterns | skills/SKILL.md#orm |
+| Security + session auth | skills/SKILL.md#security |
+| ORM + performance | skills/SKILL.md#orm |
 | Logging | skills/SKILL.md#logging |
 | API (DRF) | skills/SKILL.md#drf |
