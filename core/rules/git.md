@@ -35,5 +35,6 @@ fix(api): handle null user in response
 
 - Commit to main directly
 - Commit secrets
+- Commit without explicit user instruction (changes stay local until user asks)
 - Force push shared branches (use `--force-with-lease`)
 - Skip hooks (`--no-verify`)
