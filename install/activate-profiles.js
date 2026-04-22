@@ -2,7 +2,8 @@
 /**
  * activate-profiles.js
  * Per-project profile activator. Invoked by /explore after codebase mapping.
- * Detects stack, creates project/.claude/ symlinks, writes project .forge.yaml.
+ * Detects stack, creates machine-specific symlinks in .claude/rules.local/,
+ * and writes machine-specific hooks to .claude/settings.local.json.
  *
  * Usage:
  *   node activate-profiles.js --project <path> [--yes] [--dry-run] [--uninstall]
@@ -281,8 +282,8 @@ function checkForMissingProfiles(forgeRoot, projectPath, detectedProfiles) {
 
 function activateProfiles(forgeRoot, profileNames, projectPath) {
   const claudeDir = path.join(projectPath, '.claude');
-  const rulesDir = path.join(claudeDir, 'rules');
-  const settingsPath = path.join(claudeDir, 'settings.json');
+  const rulesDir = path.join(claudeDir, 'rules.local');
+  const settingsPath = path.join(claudeDir, 'settings.local.json');
   const profilesDir = path.join(forgeRoot, 'profiles');
 
   // Remove stale profile symlinks before creating new ones
@@ -301,7 +302,7 @@ function activateProfiles(forgeRoot, profileNames, projectPath) {
     const rulesSource = path.join(profilesDir, name, 'rules.md');
     if (fs.existsSync(rulesSource)) {
       symlinkIfNeeded(rulesSource, path.join(rulesDir, `${name}.md`), DRY_RUN);
-      log(`  .claude/rules/${name}.md → profiles/${name}/rules.md`);
+      log(`  .claude/rules.local/${name}.md → profiles/${name}/rules.md`);
     }
 
     const hooksPath = path.join(profilesDir, name, 'hooks.json');
@@ -313,7 +314,7 @@ function activateProfiles(forgeRoot, profileNames, projectPath) {
       if (DRY_RUN) {
         log(`  [dry-run] would merge hooks: ${hookIds.join(', ')}`);
       } else {
-        log(`  hooks merged → .claude/settings.json (forge.${name}.*)`);
+        log(`  hooks merged → .claude/settings.local.json (forge.${name}.*)`);
       }
     }
 
@@ -350,12 +351,6 @@ function activateProfiles(forgeRoot, profileNames, projectPath) {
   if (!DRY_RUN) {
     if (!fs.existsSync(claudeDir)) fs.mkdirSync(claudeDir, { recursive: true });
     if (Object.keys(settings).length > 0) writeSettings(settingsPath, settings);
-
-    const forgeYamlPath = path.join(projectPath, '.forge.yaml');
-    fs.writeFileSync(forgeYamlPath, writeProjectForgeYaml(profileNames));
-    ok('.forge.yaml written (commit this file)');
-  } else {
-    log(`\n[dry-run] Would write .forge.yaml with profiles: ${profileNames.join(', ')}`);
   }
 }
 
@@ -363,8 +358,8 @@ function activateProfiles(forgeRoot, profileNames, projectPath) {
 
 function uninstallProfiles(forgeRoot, projectPath) {
   const claudeDir = path.join(projectPath, '.claude');
-  const rulesDir = path.join(claudeDir, 'rules');
-  const settingsPath = path.join(claudeDir, 'settings.json');
+  const rulesDir = path.join(claudeDir, 'rules.local');
+  const settingsPath = path.join(claudeDir, 'settings.local.json');
 
   if (DRY_RUN) {
     log('\n[dry-run] Would remove all profile symlinks from project.');
@@ -388,19 +383,19 @@ function uninstallProfiles(forgeRoot, projectPath) {
     }
 
     if (DRY_RUN) {
-      log('[dry-run] Would strip forge.* hooks from .claude/settings.json');
+      log('[dry-run] Would strip forge.* hooks from .claude/settings.local.json');
       if (mcpServerNames.length > 0) log(`[dry-run] Would remove MCP servers: ${mcpServerNames.join(', ')}`);
-      log('[dry-run] Would write (or delete if empty) .claude/settings.json');
+      log('[dry-run] Would write (or delete if empty) .claude/settings.local.json');
     } else {
       settings = removeForgeHooksFromSettings(settings, 'forge.');
       if (mcpServerNames.length > 0) settings = removeMcpServersFromSettings(settings, mcpServerNames, claudeDir);
 
       if (Object.keys(settings).length === 0) {
         fs.unlinkSync(settingsPath);
-        ok('.claude/settings.json removed (empty)');
+        ok('.claude/settings.local.json removed (empty)');
       } else {
         writeSettings(settingsPath, settings);
-        ok('.claude/settings.json: forge hooks and MCP servers removed');
+        ok('.claude/settings.local.json: forge hooks and MCP servers removed');
       }
     }
   }
@@ -463,7 +458,7 @@ async function main() {
   if (DRY_RUN) {
     log('\n[dry-run] No changes made.');
   } else {
-    log('\n✓ Profiles activated. Commit .forge.yaml to share profile selection with teammates (.claude/ stays gitignored).\n');
+    log('\n✓ Profiles activated. Machine-specific settings saved to .claude/settings.local.json (gitignored).\n');
   }
 }
 
