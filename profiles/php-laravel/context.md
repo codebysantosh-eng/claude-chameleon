@@ -55,7 +55,5 @@ threshold: 5
 |-------------|-----------|
 | Testing patterns | skills/SKILL.md#testing |
 | Security | skills/SKILL.md#security |
-| Multi-tenancy | skills/SKILL.md#multi-tenancy |
-| Eloquent | skills/SKILL.md#eloquent |
-| Queue jobs | skills/SKILL.md#queue-jobs |
-| Authorization | skills/SKILL.md#authorization |
+| Migrations | skills/SKILL.md#migrations |
+| Schema & ORM | skills/SKILL.md#schema |
