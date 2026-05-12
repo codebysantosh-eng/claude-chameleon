@@ -4,6 +4,52 @@ Deep reference for Laravel development patterns. Load specific sections on deman
 
 ---
 
+## laravel-first
+
+This profile is a thin layer, not a copy of `laravel.com/docs`. The agent already knows the framework. This section encodes only:
+
+1. **How to choose** — read what the project adopted; defer to Laravel canon; apply the small list of shop overrides below.
+2. **The shop overrides** — the few opinions that the framework allows multiple answers for.
+
+For everything else — facade names, method signatures, helpers, validation rules, Eloquent relationships, queues, events, broadcasting — defer to `https://laravel.com/docs` and to the patterns already adopted in the codebase.
+
+### 1. Respect what the project already does
+
+Before suggesting an approach, grep for what's adopted. The committed choice wins, even if it differs from this profile's greenfield default.
+
+| If choosing… | Look at the project for |
+|--------------|--------------------------|
+| Auth scaffolding | `composer.json` for `laravel/sanctum`, `laravel/passport`, `laravel/breeze`, `laravel/fortify`, `laravel/jetstream` |
+| Authorization | `composer.json` for `spatie/laravel-permission` (else core Gates + Policies) |
+| Test runner | `composer.json` for `pestphp/pest`, `tests/Pest.php` (else PHPUnit) |
+| Static analysis | `phpstan.neon` `includes:` / `extends:` (Larastan vs vanilla PHPStan) |
+| Formatter | `pint.json` vs `.php-cs-fixer.php` |
+| Queue / cache driver | `config/queue.php`, `config/cache.php`, `.env` |
+| API response style | Existing controllers — Eloquent direct, `response()->json`, or `JsonResource` |
+
+### 2. Defer to Laravel canon for the rest
+
+Facade names, helper signatures, route declarations, validation rules, Eloquent relationships, queue/event/broadcasting APIs — read `https://laravel.com/docs` and the project's existing code. This profile does not duplicate framework documentation, because it goes out of date the moment Laravel ships a new version.
+
+### 3. Shop overrides (the only opinions encoded here)
+
+These differ from "whatever Laravel allows" and apply even when the framework offers multiple options.
+
+- **`env()` is restricted to `config/*.php`.** Use `config('services.foo.key')` everywhere else — `php artisan config:cache` nulls runtime `env()` in production. Enforced by the lint hook. The Blade `@env(...)` directive is a separate construct and is excluded.
+- **`password_hash` / `password_verify` → `Hash` facade.** Only legitimate exception: legacy-import auth migration (verifying against hashes from a non-Laravel system, then re-hashing on next login via a custom `UserProvider`). Document it in code. Also a hook-warning.
+- **Pure unit tests extend `PHPUnit\Framework\TestCase`**, not `Tests\TestCase`. Booting the Laravel app per test is wasted unless the SUT touches the container, DB, or HTTP kernel. (If it calls a facade, you'll see "A facade root has not been set" — at that point either inject the dependency or extend `Tests\TestCase`.)
+- **Greenfield defaults** (apply only when the project hasn't committed to a choice yet):
+  - **Sanctum** for SPA + API tokens; **Passport** only if full OAuth2 is a hard requirement.
+  - **Core Gates + Policies**; **Spatie Permission** only when team/role tables are a product requirement.
+  - **Larastan** (not vanilla PHPStan) at level 8+; `phpstan.neon` must extend `vendor/larastan/larastan/extension.neon`.
+  - **Pint** (not PHP-CS-Fixer).
+  - **PHPUnit** is the default; **Pest** if the project opts in.
+  - **Rector + `driftingly/rector-laravel`** for automated upgrades.
+
+That's the complete rule set. Everything else, look it up.
+
+---
+
 ## testing
 
 ### PHPUnit with Laravel TestCase
@@ -40,10 +86,14 @@ class PostControllerTest extends TestCase
 
 ### Unit test with PHPUnit
 
+Pure unit tests should NOT extend `Tests\TestCase` — that bootstraps the full Laravel app for every test. Extend `PHPUnit\Framework\TestCase` directly for fast, isolated unit tests; reserve `Tests\TestCase` for feature/integration tests that need the container, DB, or HTTP kernel.
+
+**Caveat:** when you extend `PHPUnit\Framework\TestCase` directly, the container is not booted and facade roots are not set. Any call to `app()`, `resolve()`, or a facade like `Cache::`, `Log::`, `Config::` will throw "A facade root has not been set." If your SUT touches facades, either (a) it's not actually a pure unit — extend `Tests\TestCase`, or (b) inject the dependency you need.
+
 ```php
 namespace Tests\Unit;
 
-use Tests\TestCase;
+use PHPUnit\Framework\TestCase;
 use App\Services\DiscountCalculator;
 
 class DiscountCalculatorTest extends TestCase
@@ -61,6 +111,20 @@ class DiscountCalculatorTest extends TestCase
         $calculator->calculate(-1.0, isMember: true);
     }
 }
+```
+
+### Pest equivalent (when the project opts into Pest)
+
+```php
+use App\Services\DiscountCalculator;
+
+it('gives members a 10% discount', function () {
+    expect((new DiscountCalculator())->calculate(100.0, isMember: true))->toBe(90.0);
+});
+
+it('throws on negative amount', function () {
+    (new DiscountCalculator())->calculate(-1.0, isMember: true);
+})->throws(InvalidArgumentException::class);
 ```
 
 ### phpunit.xml

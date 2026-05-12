@@ -2,15 +2,17 @@
   "profile": "php-laravel",
   "filePatterns": ["app/**/*.php", "tests/**/*.php", "config/**/*.php", "database/**/*.php", "routes/**/*.php"],
   "commands": {
-    "test": "composer test",
+    "test": "php artisan test",
     "lint": "composer phpstan",
     "format": "composer pint",
-    "typecheck": null,
+    "typecheck": "composer phpstan",
     "build": "composer install --no-dev --optimize-autoloader",
     "audit": "composer audit",
     "e2e": null,
-    "coverage": "composer test -- --coverage-text",
-    "format-check": "composer pint --check",
+    "coverage": "php artisan test --coverage --min=80",
+    "format-check": "composer pint -- --test",
+    "migrate": "php artisan migrate --force",
+    "queue": "php artisan queue:work",
     "logs": "tail -f storage/logs/laravel.log 2>/dev/null || echo 'No log file found'"
   }
 }
