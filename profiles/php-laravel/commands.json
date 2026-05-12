@@ -11,11 +11,8 @@
     "e2e": null,
     "coverage": "php artisan test --coverage --min=80",
     "format-check": "composer pint -- --test",
-    "migrate": "php artisan migrate",
+    "migrate": "php artisan migrate --force",
     "queue": "php artisan queue:work",
     "logs": "tail -f storage/logs/laravel.log 2>/dev/null || echo 'No log file found'"
-  },
-  "notes": {
-    "lint": "composer phpstan must invoke Larastan (vendor/larastan/larastan/extension.neon in phpstan.neon). Vanilla PHPStan does not understand Eloquent / facades."
   }
 }
