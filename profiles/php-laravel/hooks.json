@@ -62,6 +62,26 @@
           }
         ],
         "matcher": "Edit"
+      },
+      {
+        "hooks": [
+          {
+            "id": "forge.php-laravel.prefer-laravel-builtins",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/php-laravel/hooks/prefer-laravel-builtins.js"
+          }
+        ],
+        "matcher": "Write"
+      },
+      {
+        "hooks": [
+          {
+            "id": "forge.php-laravel.prefer-laravel-builtins-edit",
+            "type": "command",
+            "command": "node {{FORGE_ROOT}}/profiles/php-laravel/hooks/prefer-laravel-builtins.js"
+          }
+        ],
+        "matcher": "Edit"
       }
     ]
   }

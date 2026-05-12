@@ -4,6 +4,52 @@ Deep reference for Laravel development patterns. Load specific sections on deman
 
 ---
 
+## laravel-first
+
+The single most important rule when working in this profile: **reach for the Laravel facade or helper before any generic PHP function.** Laravel facades are not "wrappers for convenience" — they give you test fakes, dependency injection, configurable drivers, queueing, retries, and consistent error handling for free. Generic PHP gives you none of that.
+
+### Decision tree
+
+When you need to do X, ask in this order:
+
+1. Is there a Laravel facade for it? Use the facade.
+2. Is there a global helper (`request()`, `response()`, `now()`, `auth()`, `config()`, `session()`, `cookie()`, `redirect()`, `route()`, `view()`, `validator()`)? Use the helper.
+3. Is there a Laravel package recommended in `context.md`? Use it.
+4. Only then drop to raw PHP, and add a comment explaining why the Laravel path was insufficient.
+
+### Quick mapping
+
+```
+HTTP out     → Http::get(...)            NOT  curl_*, file_get_contents($url)
+Email        → Mail::to(...)             NOT  mail()
+Request data → request()->input(...)     NOT  $_GET, $_POST, $_REQUEST
+Files in     → request()->file(...)      NOT  $_FILES
+Session      → session()->put/get(...)   NOT  $_SESSION, session_start()
+Cookies      → Cookie::queue(...)        NOT  setcookie()
+Storage      → Storage::disk()->put()    NOT  fopen, file_put_contents, mkdir
+Hashing      → Hash::make / Hash::check  NOT  password_hash, password_verify
+Encryption   → Crypt::encryptString      NOT  openssl_encrypt
+Dates        → now(), Carbon, $casts     NOT  date(), strtotime(), time()
+DB           → Eloquent / DB::table()    NOT  mysqli_*, raw PDO
+JSON resp    → response()->json($data)   NOT  json_encode + header()
+Redirect     → return redirect(...)      NOT  header('Location: ...')
+Headers      → response()->withHeaders() NOT  header()
+Logging      → Log::info($msg, $ctx)     NOT  error_log, dd(), dump()
+Halt request → abort(404), throw         NOT  die, exit
+Config read  → config('foo.bar')         NOT  env('FOO_BAR') outside config/
+Subprocess   → Process::run(...) / Job   NOT  exec, shell_exec, proc_open
+```
+
+### Why `env()` is restricted outside `config/`
+
+After `php artisan config:cache` runs in production, all `env()` calls outside `config/*.php` return `null`. Always read runtime values via `config('services.foo.key')`, where `services.foo.key` is populated from `env()` *inside* `config/services.php`. This is the single most common production-only bug from generic-PHP habits.
+
+### Why facades over helpers in libraries
+
+Facades are testable via `Http::fake()`, `Mail::fake()`, `Queue::fake()`, `Storage::fake()`, `Bus::fake()`, `Event::fake()`, `Notification::fake()`. Raw PHP functions cannot be faked. If you write `mail(...)` you cannot assert in a test that a mail was sent without mocking PHP's built-ins — which Laravel will not help you with.
+
+---
+
 ## testing
 
 ### PHPUnit with Laravel TestCase
@@ -40,10 +86,12 @@ class PostControllerTest extends TestCase
 
 ### Unit test with PHPUnit
 
+Pure unit tests should NOT extend `Tests\TestCase` — that bootstraps the full Laravel app for every test. Extend `PHPUnit\Framework\TestCase` directly for fast, isolated unit tests; reserve `Tests\TestCase` for feature/integration tests that need the container, DB, or HTTP kernel.
+
 ```php
 namespace Tests\Unit;
 
-use Tests\TestCase;
+use PHPUnit\Framework\TestCase;
 use App\Services\DiscountCalculator;
 
 class DiscountCalculatorTest extends TestCase
@@ -61,6 +109,20 @@ class DiscountCalculatorTest extends TestCase
         $calculator->calculate(-1.0, isMember: true);
     }
 }
+```
+
+### Pest equivalent (Laravel 11+ default)
+
+```php
+use App\Services\DiscountCalculator;
+
+it('gives members a 10% discount', function () {
+    expect((new DiscountCalculator())->calculate(100.0, isMember: true))->toBe(90.0);
+});
+
+it('throws on negative amount', function () {
+    (new DiscountCalculator())->calculate(-1.0, isMember: true);
+})->throws(InvalidArgumentException::class);
 ```
 
 ### phpunit.xml
