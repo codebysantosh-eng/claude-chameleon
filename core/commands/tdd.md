@@ -13,7 +13,7 @@ Follow the RED → GREEN → VERIFY → REFACTOR cycle. Do not write production 
 
 Before writing any code:
 1. Read `.forge.yaml` to identify the active profile for the files being touched
-2. Read the active profile's `commands.json` for the test command and `rules.md` for forbidden patterns
+2. Use the active profile's `rules.md` (already in context) for the test command (`COMMANDS:` line) and forbidden patterns (`FORBIDDEN:` line) — no extra Read needed. Only fall back to `commands.json` for extended keys (`coverage`, `format-check`) not in `rules.md`.
 3. Read the matching profile's `skills/SKILL.md#testing` for test patterns
 
 Coverage targets are in `~/.claude/rules/testing.md`.

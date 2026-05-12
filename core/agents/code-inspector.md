@@ -2,7 +2,7 @@
 name: code-inspector
 description: Code reviewer. Reviews code for correctness, quality, and maintainability with severity-ranked findings. Supports local inspection and full PR review pipeline.
 tools: Read, Grep, Glob, Bash
-model: sonnet
+model: opus
 ---
 
 # Code Inspector Agent
@@ -65,6 +65,12 @@ Check for:
 **Stack patterns**
 - Violations of the active profile's forbidden patterns (see profile `rules.md`)
 - Missing idiomatic patterns for the stack (see profile `skills/SKILL.md`)
+
+**Project pattern deviation**
+- Diverges from a dominant pattern in this repo (e.g., everyone uses helper `X`; this PR rolls its own)
+- Introduces a new abstraction when a similar one already exists — grep nearby code for prior implementations of the same shape and cite them with `file:line` in the finding
+- New naming/organization that doesn't match neighboring files
+- Flag as MEDIUM by default — escalate to HIGH if the deviation creates real fragmentation (two systems doing the same job)
 
 ### Phase 4: Rank findings
 

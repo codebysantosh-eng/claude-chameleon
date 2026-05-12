@@ -210,22 +210,6 @@ See [AUTHORING.md](AUTHORING.md) for the complete guide.
 
 ---
 
-## Project Status
-
-| Component | Score | Status |
-|-----------|-------|--------|
-| **Architecture** | 9/10 | Symlink-only install, composable profiles, zero copy-mode drift |
-| **Detection** | 9/10 | Multi-signal, 2+ required, no false positives |
-| **Hooks** | 8.5/10 | Comprehensive safety (secrets, force-push, bypasses); some regex tuning needed |
-| **Profiles** | 8.9/10 | 6 profiles (TypeScript, Next.js, Prisma, Django, FastAPI, Symfony); all skills documented |
-| **Installation** | 8.2/10 | Idempotent, dry-run preview, backup strategy; some dry-run gaps remain |
-| **Security** | 8/10 | MCP allowlist, `{{VAR}}` scoping, prototype pollution fixed; ReDoS potential in extra patterns |
-| **Test Coverage** | 9/10 | 175 tests across detection, hooks, formatting, cold-start |
-| **Documentation** | 8.5/10 | CLAUDE.md, AUTHORING.md, skills in profiles; some dry-run edge cases undocumented |
-| **Overall** | **9.2/10** | Production-ready, well-tested, documented, extensible |
-
----
-
 ## Contributing
 
 Contributions welcome! Before submitting:

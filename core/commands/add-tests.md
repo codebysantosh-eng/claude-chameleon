@@ -13,12 +13,13 @@ If no specific file or pattern is given, discover test gaps across the project.
 
 Workflow:
 1. Read `.forge.yaml` → find active profile for the target files
-2. Read profile `rules.md` → get test command and coverage command
-3. Read profile `skills/SKILL.md#testing` → get test patterns and conventions
-4. Map source files → test files (find gaps)
-5. Run existing tests to confirm green baseline
-6. Add tests for uncovered behaviour — match existing conventions exactly
-7. Run coverage check against targets in `~/.claude/rules/testing.md`
+2. Read profile `rules.md` → get test command and coverage command (already in context)
+3. Read profile `skills/SKILL.md#testing` → get stack-level test patterns and conventions
+4. **Find prior tests in this codebase.** Before writing anything, grep for 2–3 existing tests covering similar code (same module, same feature class). Read at least one in full. Note the project's *actual* conventions: naming, fixture/setup, assertion style, mocking strategy — these often differ from stack-level guidance.
+5. Map source files → test files (find gaps)
+6. Run existing tests to confirm green baseline
+7. Add tests for uncovered behaviour — match the prior tests' shape, not just the stack convention
+8. Run coverage check against targets in `~/.claude/rules/testing.md`
 
 Test what the code does, not how it does it. One behaviour per test. Independent tests — no shared mutable state.
 

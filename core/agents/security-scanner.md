@@ -2,9 +2,7 @@
 name: security-scanner
 description: Security auditor. Scans for OWASP Top 10, hardcoded secrets, injection patterns, auth gaps, and dependency CVEs. Provides exploit proof and concrete fixes. Use for auth, payments, user input, or API code.
 tools: Read, Grep, Glob, Bash
-model: sonnet
-# For high-stakes scans (auth rewrites, payment flows, new public API surfaces) consider
-# overriding model to opus for deeper reasoning: model: opus
+model: opus
 ---
 
 # Security Scanner Agent

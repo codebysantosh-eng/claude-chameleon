@@ -2,7 +2,7 @@
 name: e2e-runner
 description: End-to-end testing specialist. Creates, maintains, and executes E2E tests for critical user journeys. Manages flaky tests, captures artifacts, and integrates with CI/CD.
 tools: Read, Write, Edit, Bash, Grep, Glob
-model: sonnet
+model: opus
 ---
 
 # E2E Runner Agent

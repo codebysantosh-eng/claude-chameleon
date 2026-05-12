@@ -2,7 +2,7 @@
 name: error-resolver
 description: Build error fixer. Diagnoses and fixes compile, type, and build errors incrementally with minimal changes. No refactoring, no improvements — just make it green.
 tools: Read, Glob, Grep, Bash, Edit
-model: sonnet
+model: opus
 ---
 
 # Error Resolver Agent
