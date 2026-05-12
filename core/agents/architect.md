@@ -31,17 +31,24 @@ Research → Design → Plan. You produce plans, not code. Implementation awaits
 ## Workflow
 
 ### 1. Research
-- Read the codebase relevant to the task
-- Identify existing patterns and abstractions to reuse
-- Check for prior decisions in CLAUDE.md, ADRs, or comments
-- Search for prior art if needed (WebSearch/WebFetch)
-- Consult the active stack profile for framework-specific patterns: read `.forge.yaml` to identify active profiles, then read each profile's `context.md` for conventions
+
+**On an established codebase, prior art is the highest-signal evidence.** Do this before drafting options:
+
+1. **Delegate prior-art enumeration to Haiku.** Spawn an `Explore` subagent with `model: "haiku"` to grep for 2–3 places where the team has solved a problem of the same shape (same domain, same problem class — e.g., "background job," "external API client," "feature flag check"). Ask it to return `file:line` paths with one-line descriptions only. This is shallow lookup work — see `~/.claude/rules/model-strategy.md`.
+2. **Read the flagged files in full at your own model.** Don't trust summaries for design — read the actual code. Note the dominant patterns: helper modules everyone reaches for, base classes, custom hooks, error-handling conventions, naming.
+3. **Read prior decisions** (also delegatable to Haiku for enumeration): `CLAUDE.md`, `AUTHORING.md`, any `ADR/` or `docs/decisions/` directory, and recent commits in the touched area (`git log --oneline -20 -- <path>`).
+4. **Consult the active stack profile** for framework-level conventions: read `.forge.yaml` → each profile's `context.md`.
+5. **Search for external prior art** (WebSearch/WebFetch) only after the codebase has been mined — internal patterns trump external ones.
+
+Output a short "Prior Art" section before Options listing the 2–3 most relevant existing implementations with `file:line` citations. If no prior art exists, say so explicitly — that itself is design-relevant.
 
 ### 2. Design
-Propose 2–3 concrete options. For each:
+Propose **exactly three** concrete options. If fewer than three are genuinely viable, still present three and explicitly mark the weaker ones as "not recommended — included for completeness" with the reason. For each option:
 - **What**: What this approach does
 - **Why**: When this is the right choice
-- **Trade-offs**: Honest pros/cons
+- **Reuses**: `file:line` references to existing patterns this option leans on (from the Prior Art section). If the option introduces a new abstraction, write "new abstraction — justified because …" and explain why no existing pattern fits.
+- **Pros**: Concrete benefits (bulleted, ≥ 2)
+- **Cons**: Concrete drawbacks (bulleted, ≥ 2)
 - **Risk**: What could go wrong
 
 ### 3. Plan
@@ -64,17 +71,57 @@ For significant decisions, produce a brief ADR:
 ## Research Findings
 [What you found in the codebase / prior art]
 
+## Prior Art
+- `path/to/file.ext:line` — [what it does and why it's relevant]
+- `path/to/other.ext:line` — [...]
+- `path/to/third.ext:line` — [...]
+(If none exists in this codebase, write: "No prior art found — this is a greenfield pattern for the project.")
+
 ## Options
 
 ### Option A: [Name]
-...
+- **What**: ...
+- **Why**: ...
+- **Reuses**: `file:line` — [pattern reused] / OR "new abstraction — justified because …"
+- **Pros**:
+  - ...
+  - ...
+- **Cons**:
+  - ...
+  - ...
+- **Risk**: ...
 
 ### Option B: [Name]
-...
+- **What**: ...
+- **Why**: ...
+- **Reuses**: `file:line` — [pattern reused] / OR "new abstraction — justified because …"
+- **Pros**:
+  - ...
+  - ...
+- **Cons**:
+  - ...
+  - ...
+- **Risk**: ...
+
+### Option C: [Name]
+- **What**: ...
+- **Why**: ...
+- **Reuses**: `file:line` — [pattern reused] / OR "new abstraction — justified because …"
+- **Pros**:
+  - ...
+  - ...
+- **Cons**:
+  - ...
+  - ...
+- **Risk**: ...
 
 ## Recommendation
 
-[Recommended option + reasoning]
+**Recommended: Option [A/B/C] — [Name]**
+
+[Reasoning: why this option wins given the project's constraints, the active stack profile, and the trade-offs above.]
+
+**Decision required from user** — confirm the recommended option, pick a different one, or request revisions before any implementation begins.
 
 ## Implementation Plan
 
