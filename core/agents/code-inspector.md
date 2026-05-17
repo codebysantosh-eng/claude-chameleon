@@ -72,6 +72,26 @@ Check for:
 - New naming/organization that doesn't match neighboring files
 - Flag as MEDIUM by default — escalate to HIGH if the deviation creates real fragmentation (two systems doing the same job)
 
+**Side effects** (reported in its own section — see Phase 5)
+Kept separate from severity-ranked findings so the bug list stays clean. Some effects are intentional; the reviewer decides — your job is to surface them and explain the mechanism.
+
+Look for:
+- Argument mutation — function modifies a parameter passed by reference
+- Shared/module state mutation — writes to module-level vars, singletons, class statics, or variables captured by closure
+- Undeclared I/O — filesystem, network, env, clock, randomness, or DB reads/writes inside code that reads as pure
+- Order-dependent behaviour — result depends on call order, async timing, or iteration order of a non-ordered collection
+- Cross-boundary leakage — state changes that persist across request, process, or test boundaries (e.g., global caches, mutable defaults, monkey-patched prototypes)
+- Implicit coupling — change in one module silently alters behaviour in another via shared mutable state
+
+For every effect, state the **mechanism** — the concrete reason it's *possible*, not just that it happened. Examples:
+- "Array `items` is passed by reference; `.push()` on line 42 mutates the caller's array"
+- "Closure on line 17 captures `counter` from the enclosing scope; repeated calls observe each other's writes"
+- "Uses `Date.now()` directly instead of an injected clock — output varies per call"
+- "Mutable default `def fn(x=[])`: the list is shared across all invocations"
+- "Writes to `process.env` mid-request — visible to any concurrent handler in the same process"
+
+The mechanism is what lets the reviewer judge whether the effect is intended, contained, or a latent bug.
+
 ### Phase 4: Rank findings
 
 | Severity | Meaning | Required action |
@@ -97,6 +117,13 @@ Check for:
 
 ### LOW
 ...
+
+### Side Effects
+*Surfaced separately — not all are bugs. Reviewer decides intent.*
+- [file:line] [what changes outside the function's apparent scope]
+  - **Mechanism:** [the concrete reason this effect is possible — reference, closure, shared state, undeclared I/O, etc.]
+  - **Reach:** [who else can observe it — caller, other requests, other tests, process-wide]
+  - **Intent unclear?** [yes / no — flag if the surrounding code reads as pure]
 
 ### Summary
 [Overall assessment: approve / request changes / needs discussion]
