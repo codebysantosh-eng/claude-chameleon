@@ -1,5 +1,5 @@
 ---
-description: Review code for correctness, quality, and maintainability — local changes or full PR pipeline
+description: Adversarial code review — bugs, misses, security, quality, and side effects in local changes or a full PR pipeline
 depth: deep
 ---
 
