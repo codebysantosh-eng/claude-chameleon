@@ -56,13 +56,8 @@ function removeForgeHooksFromSettings(settings, prefix) {
   return settings;
 }
 
-// Atomic write: write to tmp then rename to avoid corruption on kill
+// Atomic write: write to tmp then rename to avoid corruption on kill.
 function writeSettings(settingsPath, settings) {
-  // Keep one backup of the pre-activation state (created on first write only)
-  const bak = settingsPath + '.bak';
-  if (fs.existsSync(settingsPath) && !fs.existsSync(bak)) {
-    fs.copyFileSync(settingsPath, bak);
-  }
   const tmp = settingsPath + '.tmp';
   const fd = fs.openSync(tmp, 'w');
   fs.writeSync(fd, JSON.stringify(settings, null, 2));
@@ -71,4 +66,11 @@ function writeSettings(settingsPath, settings) {
   fs.renameSync(tmp, settingsPath);
 }
 
-module.exports = { mergeHooksIntoSettings, removeForgeHooksFromSettings, writeSettings, loadSettings };
+// Remove a legacy `<settings>.bak` left behind by older versions (the atomic write
+// above makes it unnecessary). Safe no-op if absent.
+function removeLegacyBackup(settingsPath) {
+  const bak = settingsPath + '.bak';
+  try { if (fs.existsSync(bak)) fs.unlinkSync(bak); } catch { /* best effort */ }
+}
+
+module.exports = { mergeHooksIntoSettings, removeForgeHooksFromSettings, writeSettings, removeLegacyBackup, loadSettings };

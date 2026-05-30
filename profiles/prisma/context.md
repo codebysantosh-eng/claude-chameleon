@@ -35,3 +35,4 @@ threshold: 5
 | Queries | skills/SKILL.md#queries |
 | Testing | skills/SKILL.md#testing |
 | Performance | skills/SKILL.md#performance |
+| Security | skills/SKILL.md#security |

@@ -49,3 +49,4 @@ threshold: 5
 | Security | skills/SKILL.md#security |
 | Coding standards | skills/SKILL.md#coding-standards |
 | Observability | skills/SKILL.md#observability |
+| Accessibility | skills/SKILL.md#a11y |

@@ -328,3 +328,42 @@ app.get('/users/:id', async (req, res) => {
   // ...
 });
 ```
+
+---
+
+## a11y
+
+Stack-specific accessibility patterns for the DOM / React. See `~/.claude/rules/a11y.md` for the universal principles and severity ranking.
+
+### Implementation patterns
+
+| Concern | Pattern |
+|---------|---------|
+| Accessible name | `<label htmlFor>` (preferred), `aria-label`, or `aria-labelledby` |
+| Disabled-with-reason | `aria-describedby` → visually-hidden help text element |
+| Error linking | `aria-invalid="true"` + `aria-describedby` → error node id |
+| Dynamic state | `aria-live="polite"` for non-urgent, `"assertive"` for errors; or shift focus to the new content |
+| Icon-only buttons | `aria-label` describing the action |
+| Hidden file inputs | `aria-hidden="true"` + `tabIndex={-1}` so they don't show as duplicate "Attach photo" controls |
+| Dialogs | Radix/shadcn Dialog handles focus trap + return; gate ESC/backdrop dismissal during in-flight submissions |
+| Loading | `aria-busy="true"` on container + visible indicator |
+| Screen-reader-only text | `className="sr-only"` (Tailwind built-in) |
+
+### Recurring misses (catch in review)
+
+- Textarea + "min N chars" rule with no `aria-describedby` → screen-reader user has no clue why submit stays disabled
+- Two same-labeled buttons because a hidden file input also exposes its label
+- Inline form error rendered in a different column than its input, with no programmatic association
+- Dialog dismiss-on-ESC/backdrop fires mid-submit; the in-flight request resolves on an unmounted component
+- Status pill changes from "Open" → "Closed" with no announcement
+- Color-only differentiation (e.g., red overdue chip with no icon or text marker)
+
+### Tooling
+
+| Tool | Use |
+|------|-----|
+| `@axe-core/react` | Dev-mode automated a11y audit |
+| `eslint-plugin-jsx-a11y` | Lint-time catches (alt text, button vs div, role validity) |
+| Browser DevTools Accessibility tree | Manual verification |
+| Keyboard-only walk-through | Manual; part of visual verification |
+| Vitest + Testing Library | Use `getByRole` over `getByTestId` so tests assert a11y-tree correctness |

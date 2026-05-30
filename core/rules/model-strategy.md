@@ -2,7 +2,7 @@
 
 **Two-tier rule. No middle.**
 
-- **Opus 4.7** — anything that affects code correctness or quality: writing, editing, reviewing, auditing, debugging, designing, architecting. The cost of a missed bug or vulnerability is orders of magnitude higher than the cost of running Opus.
+- **Opus (latest)** — anything that affects code correctness or quality: writing, editing, reviewing, auditing, debugging, designing, architecting. The cost of a missed bug or vulnerability is orders of magnitude higher than the cost of running Opus. Always use the latest Opus tier (currently Opus 4.8).
 - **Haiku 4.5** — shallow read-only work: enumerate files, grep for matches, list directories, summarize a known artifact. No correctness judgment.
 
 There is no Sonnet tier in this kit. If you reach for Sonnet, you're either under-spending on a correctness-sensitive task or over-spending on enumeration.
@@ -14,7 +14,7 @@ There is no Sonnet tier in this kit. If you reach for Sonnet, you're either unde
 | Model | Use when |
 |-------|----------|
 | Haiku 4.5 | Read, Grep, Glob, file listing, log/diff inspection, codebase mapping, prior-art enumeration |
-| Opus 4.7 | Code generation, edits, code review, security scan, performance profiling, architecture, design, debugging |
+| Opus (latest) | Code generation, edits, code review, security scan, performance profiling, architecture, design, debugging |
 
 ## Subagents inherit the parent model — override explicitly
 

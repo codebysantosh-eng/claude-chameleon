@@ -125,10 +125,16 @@ function main() {
       }
       ran.add(cmd);
 
-      // Tool availability check — skip for package manager runners that handle installs themselves
+      // Tool availability check — skip for package manager runners that handle installs themselves.
+      // Path-based commands (e.g. ./vendor/bin/phpunit) won't resolve via `which`; check the file instead.
       const toolName = cmd.split(/\s+/)[0];
       const selfInstallingTools = new Set(['npx', 'pnpm', 'yarn', 'bun']);
-      if (!selfInstallingTools.has(toolName) && !toolAvailable(toolName)) {
+      const toolMissing = !selfInstallingTools.has(toolName) && (
+        toolName.includes('/')
+          ? !fs.existsSync(path.resolve(PROJECT_ROOT, toolName))
+          : !toolAvailable(toolName)
+      );
+      if (toolMissing) {
         fail(`${step} (${profileName})`, `Tool '${toolName}' not found. Install it or skip this check.`);
         allPassed = false;
         continue;

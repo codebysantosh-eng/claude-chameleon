@@ -20,9 +20,7 @@
           }
         ],
         "matcher": "Edit"
-      }
-    ],
-    "PostToolUse": [
+      },
       {
         "hooks": [
           {
@@ -42,7 +40,9 @@
           }
         ],
         "matcher": "Edit"
-      },
+      }
+    ],
+    "PostToolUse": [
       {
         "hooks": [
           {

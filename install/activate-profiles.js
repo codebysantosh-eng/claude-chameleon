@@ -18,7 +18,7 @@ const { spawnSync } = require('child_process');
 const readline = require('readline');
 
 const { symlinkIfNeeded, pruneProfileSymlinks } = require('./lib/symlink');
-const { mergeHooksIntoSettings, removeForgeHooksFromSettings, writeSettings, loadSettings } = require('./lib/hooks');
+const { mergeHooksIntoSettings, removeForgeHooksFromSettings, writeSettings, loadSettings, removeLegacyBackup } = require('./lib/hooks');
 const { mergeMcpIntoSettings, collectMcpServerNames, removeMcpServersFromSettings, parseEnvFile } = require('./lib/mcp');
 const { parseSimpleYaml, writeProjectForgeYaml, parseFrontmatter } = require('./lib/yaml');
 
@@ -370,35 +370,45 @@ function uninstallProfiles(forgeRoot, projectPath) {
   }
 
   if (fs.existsSync(settingsPath)) {
-    let settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
-
-    // Enumerate MCP servers to remove (read-only — safe in dry-run)
-    const allProfiles = getAvailableProfiles(forgeRoot);
-    const mcpServerNames = [];
-    for (const pName of allProfiles) {
-      const mcpPath = path.join(forgeRoot, 'profiles', pName, 'mcp.json');
-      if (fs.existsSync(mcpPath)) {
-        try { mcpServerNames.push(...collectMcpServerNames(JSON.parse(fs.readFileSync(mcpPath, 'utf8')), settings, pName)); } catch {}
-      }
+    let settings = null;
+    try {
+      settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+    } catch {
+      // Don't delete or rewrite a file we can't parse — it may hold the user's own config.
+      log(`⚠ Could not parse ${settingsPath} — skipping forge hook/MCP cleanup. Remove forge.* entries manually.`);
     }
 
-    if (DRY_RUN) {
-      log('[dry-run] Would strip forge.* hooks from .claude/settings.local.json');
-      if (mcpServerNames.length > 0) log(`[dry-run] Would remove MCP servers: ${mcpServerNames.join(', ')}`);
-      log('[dry-run] Would write (or delete if empty) .claude/settings.local.json');
-    } else {
-      settings = removeForgeHooksFromSettings(settings, 'forge.');
-      if (mcpServerNames.length > 0) settings = removeMcpServersFromSettings(settings, mcpServerNames, claudeDir);
+    if (settings) {
+      // Enumerate MCP servers to remove (read-only — safe in dry-run)
+      const allProfiles = getAvailableProfiles(forgeRoot);
+      const mcpServerNames = [];
+      for (const pName of allProfiles) {
+        const mcpPath = path.join(forgeRoot, 'profiles', pName, 'mcp.json');
+        if (fs.existsSync(mcpPath)) {
+          try { mcpServerNames.push(...collectMcpServerNames(JSON.parse(fs.readFileSync(mcpPath, 'utf8')), settings, pName)); } catch {}
+        }
+      }
 
-      if (Object.keys(settings).length === 0) {
-        fs.unlinkSync(settingsPath);
-        ok('.claude/settings.local.json removed (empty)');
+      if (DRY_RUN) {
+        log('[dry-run] Would strip forge.* hooks from .claude/settings.local.json');
+        if (mcpServerNames.length > 0) log(`[dry-run] Would remove MCP servers: ${mcpServerNames.join(', ')}`);
+        log('[dry-run] Would write (or delete if empty) .claude/settings.local.json');
       } else {
-        writeSettings(settingsPath, settings);
-        ok('.claude/settings.local.json: forge hooks and MCP servers removed');
+        settings = removeForgeHooksFromSettings(settings, 'forge.');
+        if (mcpServerNames.length > 0) settings = removeMcpServersFromSettings(settings, mcpServerNames, claudeDir);
+
+        if (Object.keys(settings).length === 0) {
+          fs.unlinkSync(settingsPath);
+          ok('.claude/settings.local.json removed (empty)');
+        } else {
+          writeSettings(settingsPath, settings);
+          ok('.claude/settings.local.json: forge hooks and MCP servers removed');
+        }
       }
     }
   }
+
+  if (!DRY_RUN) removeLegacyBackup(settingsPath);
 
   const forgeYamlPath = path.join(projectPath, '.forge.yaml');
   log(`\nNote: ${forgeYamlPath} was NOT removed — delete it manually if no longer needed.`);

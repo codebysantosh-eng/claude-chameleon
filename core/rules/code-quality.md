@@ -45,4 +45,4 @@ Create new objects. Never mutate. Use language-idiomatic immutable patterns (spr
 
 ## Reference
 
-See `skills/coding-standards/SKILL.md` for detailed patterns.
+See the active profile's `skills/SKILL.md` for detailed, stack-specific patterns.

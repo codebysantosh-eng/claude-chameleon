@@ -6,7 +6,20 @@
 let raw = '';
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', chunk => { raw += chunk; });
-process.stdin.on('end', () => { run(JSON.parse(raw)); });
+process.stdin.on('end', () => {
+  let input;
+  try {
+    input = JSON.parse(raw);
+  } catch {
+    // Fail closed: a guard that can't read its input must not silently let a public secret through.
+    console.log(JSON.stringify({
+      decision: 'block',
+      reason: 'forge.nextjs.next-public-secret-guard: could not parse hook input — blocking to be safe. Re-run; if this persists, check the hook installation.'
+    }));
+    process.exit(0);
+  }
+  run(input);
+});
 
 function run(input) {
 
@@ -18,7 +31,7 @@ const filePath = toolInput.file_path || '';
 const serverSecretPatterns = [
   'DATABASE_URL', 'DB_PASSWORD', 'SECRET_KEY', 'PRIVATE_KEY',
   'API_SECRET', 'JWT_SECRET', 'STRIPE_SECRET', 'SENDGRID_API_KEY',
-  'AWS_SECRET', 'OPENAI_API_KEY',
+  'AWS_SECRET', 'OPENAI_API_KEY', 'PASSWORD', 'PASSPHRASE', 'CLIENT_SECRET',
 ];
 
 const contentToCheck = tool === 'Write' ? content

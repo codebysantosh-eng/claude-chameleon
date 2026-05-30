@@ -13,11 +13,8 @@ Use the `code-inspector` agent to review:
 $ARGUMENTS
 
 **Local mode** (no PR number): review uncommitted changes via `git diff`.
-**PR mode** (PR number or URL provided): full pipeline — fetch diff, analyze, post inline comments, leave review decision.
+**PR mode** (PR number or URL provided): full pipeline — fetch diff, analyze, post findings as a single structured review body (grouped by file and severity), leave review decision. Do not post line-level inline comments.
 
 Apply the active profile's patterns and forbidden rules to each file reviewed. When files span multiple stacks, apply the matching profile per file.
 
-Severity ranking:
-- CRITICAL / HIGH → block merge, fix now
-- MEDIUM → fix before ship
-- LOW → suggest, don't block
+Rank every finding by severity and required action per the `code-inspector` agent's severity table (the authoritative source): CRITICAL/HIGH block merge, MEDIUM fix before ship, LOW suggest only.

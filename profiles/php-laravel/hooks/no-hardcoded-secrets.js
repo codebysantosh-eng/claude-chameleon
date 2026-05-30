@@ -6,7 +6,20 @@
 let raw = '';
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', chunk => { raw += chunk; });
-process.stdin.on('end', () => { run(JSON.parse(raw)); });
+process.stdin.on('end', () => {
+  let input;
+  try {
+    input = JSON.parse(raw);
+  } catch {
+    // Fail closed: a secret guard that can't read its input must not silently let a write through.
+    console.log(JSON.stringify({
+      decision: 'block',
+      reason: 'forge.php-laravel.no-hardcoded-secrets: could not parse hook input — blocking to be safe. Re-run; if this persists, check the hook installation.'
+    }));
+    process.exit(0);
+  }
+  run(input);
+});
 
 function run(input) {
   const tool = input.tool_name;
@@ -90,11 +103,10 @@ function run(input) {
 
       const labels = [...new Set(findings)].map(t => typeLabels[t] || t).join(', ');
       console.log(JSON.stringify({
-        decision: 'approve',
-        type: 'warning',
-        message: `Potential hardcoded secret (${labels}) in ${filePath}. Use env() helper or .env file.`
+        decision: 'block',
+        reason: `Hardcoded secret (${labels}) detected in ${filePath}. Move it to a .env file and read it via config()/env(). ROTATE THE SECRET IMMEDIATELY if it was real.`
       }));
-      return;
+      process.exit(0);
     }
   }
 
