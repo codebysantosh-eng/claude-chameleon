@@ -28,7 +28,7 @@ function parseSimpleYaml(content) {
       continue;
     }
 
-    if (indent === 2 && trimmed.startsWith('- ')) {
+    if (currentList && indent >= 2 && trimmed.startsWith('- ')) {
       const itemRaw = trimmed.slice(2);
       if (itemRaw.includes(':')) {
         currentObj = Object.create(null);

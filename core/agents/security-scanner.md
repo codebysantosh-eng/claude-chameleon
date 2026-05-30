@@ -72,7 +72,7 @@ After reporting, fix all CRITICAL and HIGH findings immediately. Then report bac
 Always scan using the **Grep tool** for:
 - `(api_key|secret_key|password|token|private_key|client_secret)\s*[:=]` (case-insensitive)
 - `sk_live_[a-zA-Z0-9]+` (Stripe live key)
-- `ghp_[a-zA-Z0-9]{36}` (GitHub PAT)
+- `gh[posru]_[a-zA-Z0-9]{36}` (GitHub token — ghp/gho/ghs/ghr/ghu) and `github_pat_[A-Za-z0-9_]{82}` (fine-grained PAT)
 - `AKIA[0-9A-Z]{16}` (AWS access key)
 - `xox[bpoa]-[0-9a-zA-Z-]+` (Slack token)
 - `-----BEGIN (RSA |EC )?PRIVATE KEY-----`

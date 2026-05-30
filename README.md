@@ -18,14 +18,14 @@ claude-chameleon is a toolkit for extending Claude Code with stack-aware rules, 
 
 ## Features
 
-- ✅ **Multi-profile support** — TypeScript, Next.js, Prisma, Python (Django/FastAPI), PHP Symfony, and extensible
+- ✅ **Multi-profile support** — TypeScript, Next.js, Prisma, Python (Django/FastAPI), PHP (Symfony/Laravel), and extensible
 - ✅ **Auto-detection** — scans `.forge.yaml` + project files to activate the right profiles
 - ✅ **Safety hooks** — pre-commit checks for secrets, force-push guards, hook bypasses, env file protection
 - ✅ **Structured commands** — test, lint, format, build, audit, typecheck, coverage, logs, e2e per stack
 - ✅ **Smart skills** — deep, searchable references for testing patterns, security, migrations, schema design
 - ✅ **MCP integration** — auto-register database clients (Prisma), browser automation (Playwright)
 - ✅ **Dry-run mode** — preview all changes before writing to disk
-- ✅ **Comprehensive tests** — 175 tests covering detection, hooks, formatting, parsing
+- ✅ **Comprehensive tests** — 211 tests covering detection, hooks, formatting, parsing
 
 ---
 
@@ -65,7 +65,7 @@ claude-chameleon/
 ├── core/
 │   ├── agents/          # 8 generic agents (architect, tdd-dev, security, etc.)
 │   ├── commands/        # 15 commands (/design, /tdd, /fix, /scan, /e2e, etc.)
-│   ├── rules/           # 5 always-on rules (code-quality, testing, git, security, model-strategy)
+│   ├── rules/           # 7 always-on rules (code-quality, testing, git, security, model-strategy, workflow, a11y)
 │   └── hooks/           # Core safety hooks (secret detection, force-push guard, hook bypass check)
 ├── profiles/
 │   ├── typescript/      # TypeScript + Vitest, ESLint, Prettier
@@ -74,6 +74,7 @@ claude-chameleon/
 │   ├── python-django/   # Django + pytest, Ruff, Black, mypy
 │   ├── python-fastapi/  # FastAPI + pytest, Ruff, Black, mypy
 │   ├── php-symfony/     # Symfony + PHPStan, PHP-CS-Fixer
+│   ├── php-laravel/     # Laravel + Larastan, Pint
 │   └── tests/           # Profile test suite (detection, hooks, formatting)
 ├── install/
 │   ├── claude-chameleon-setup.js     # Core installation
@@ -166,6 +167,13 @@ Embedded in `.claude/settings.json`, triggered on every Write/Edit/Bash:
 /onboard          # New team member onboarding (codebase overview, conventions)
 ```
 
+### Explore (no orchestrator)
+
+```bash
+/explore          # Map the codebase and activate stack profiles
+/learn            # Extract reusable patterns from the session into skills
+```
+
 ---
 
 ## Installation & Development
@@ -195,7 +203,7 @@ Validates symlink support, creates `~/.claude/.forge.yaml` with your kit path.
 ./profiles/tests/run-tests.sh format    # Format validation only
 ```
 
-Expected: **175 passed, 0 failed**
+Expected: **211 passed, 0 failed**
 
 ### Add a New Profile
 
@@ -238,7 +246,7 @@ MIT. See LICENSE file.
 
 - Built for [Claude Code](https://claude.com/claude-code)
 - Inspired by language-specific toolchain conventions (npm, pip, composer, cargo)
-- Tested across real projects: TypeScript (Vitest, ESLint, Prettier), Next.js, Prisma, Django, FastAPI, Symfony
+- Tested across real projects: TypeScript (Vitest, ESLint, Prettier), Next.js, Prisma, Django, FastAPI, Symfony, Laravel
 
 ---
 

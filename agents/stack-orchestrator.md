@@ -88,6 +88,7 @@ FILE_ROUTING: [ext,ext] → [profile name]
 - `ACTIVE_PROFILES` — one line per profile, pipe-delimited: `name | glob | test:cmd | lint:cmd`
 - `FORGE_ROOT` — absolute path, no trailing slash
 - `FILE_ROUTING` — comma-separated extensions → profile name, one line per rule
+- `COLLISION_RULE` — tie-breaker when an extension maps to multiple profiles (always `first listed profile wins`)
 
 **Example:**
 ```

@@ -7,7 +7,11 @@
 let raw = '';
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', chunk => { raw += chunk; });
-process.stdin.on('end', () => { run(JSON.parse(raw)); });
+process.stdin.on('end', () => {
+  let input;
+  try { input = JSON.parse(raw); } catch { console.log(JSON.stringify({ decision: 'approve' })); return; }
+  run(input);
+});
 
 function run(input) {
   const tool = input.tool_name;
@@ -69,8 +73,7 @@ function run(input) {
     if (untypedCount > 0) {
       console.log(JSON.stringify({
         decision: 'approve',
-        type: 'warning',
-        message: `${untypedCount} public/protected method parameter(s) lack type hints in ${filePath}. Add type hints for PHP 8.4 compatibility and IDE support.`
+        systemMessage: `${untypedCount} public/protected method parameter(s) lack type hints in ${filePath}. Add type hints for PHP 8.4 compatibility and IDE support.`
       }));
       return;
     }

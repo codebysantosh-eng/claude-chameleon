@@ -84,13 +84,13 @@ for profile_dir in "${PROFILES_DIR}"/*/; do
     fi
   fi
 
-  # rules.md must be <= 5 lines (4 content lines + 1 trailing newline)
+  # rules.md must be <= 4 lines (the always-on limit documented in CLAUDE.md / AUTHORING.md)
   if [[ -f "${profile_dir}/rules.md" ]]; then
     line_count=$(wc -l < "${profile_dir}/rules.md")
-    if [[ $line_count -le 5 ]]; then
-      pass "${profile}/rules.md <= 5 lines ($line_count)"
+    if [[ $line_count -le 4 ]]; then
+      pass "${profile}/rules.md <= 4 lines ($line_count)"
     else
-      fail "${profile}/rules.md <= 5 lines" "Got ${line_count} lines — exceeds 4-line always-on limit"
+      fail "${profile}/rules.md <= 4 lines" "Got ${line_count} lines — exceeds the 4-line always-on limit"
     fi
   fi
 
@@ -214,12 +214,19 @@ touch "${NEXTJS_PROJECT}/next.config.js"
 echo '{"dependencies": {"next": "^14.0.0"}}' > "${NEXTJS_PROJECT}/package.json"
 touch "${NEXTJS_PROJECT}/app/page.tsx"
 
+# Mock PHP Laravel project
+LARAVEL_PROJECT="${TEST_TMPDIR}/laravel-app"
+mkdir -p "${LARAVEL_PROJECT}/app/Http/Controllers"
+touch "${LARAVEL_PROJECT}/artisan"
+echo '{"require": {"laravel/framework": "^11.0"}}' > "${LARAVEL_PROJECT}/composer.json"
+
 echo ""
 echo "  Fixture projects created:"
 echo "  Django:   $DJANGO_PROJECT"
 echo "  FastAPI:  $FASTAPI_PROJECT"
 echo "  TypeScript: $TS_PROJECT"
 echo "  Symfony:  $PHP_PROJECT"
+echo "  Laravel:  $LARAVEL_PROJECT"
 echo "  Prisma:   $PRISMA_PROJECT"
 echo "  Next.js:  $NEXTJS_PROJECT"
 echo ""
@@ -288,6 +295,32 @@ process.exit(line && line.includes('✓') ? 0 : 1);
   pass "php-symfony detected on Symfony project"
 else
   fail "php-symfony detected on Symfony project" "Profile not in detect output"
+fi
+
+# Test Laravel detection
+if node -e "
+const {spawnSync} = require('child_process');
+const r = spawnSync('node', ['${INSTALLER}', '--project', '${LARAVEL_PROJECT}', '--forge-root', '${REPO_ROOT}', '--dry-run', '--yes'], {encoding:'utf8'});
+const lines = r.stdout.split('\n');
+const line = lines.find(l => l.includes('php-laravel'));
+process.exit(line && line.includes('✓') ? 0 : 1);
+" 2>/dev/null; then
+  pass "php-laravel detected on Laravel project"
+else
+  fail "php-laravel detected on Laravel project" "Profile not in detect output"
+fi
+
+# Test that Laravel does NOT falsely detect on a Symfony project
+if node -e "
+const {spawnSync} = require('child_process');
+const r = spawnSync('node', ['${INSTALLER}', '--project', '${PHP_PROJECT}', '--forge-root', '${REPO_ROOT}', '--dry-run', '--yes'], {encoding:'utf8'});
+const lines = r.stdout.split('\n');
+const line = lines.find(l => l.includes('php-laravel'));
+process.exit(line && line.includes('✓') ? 1 : 0);
+" 2>/dev/null; then
+  pass "php-laravel NOT falsely detected on Symfony project"
+else
+  fail "php-laravel NOT falsely detected on Symfony project" "Laravel was activated on a Symfony project"
 fi
 
 # Test Prisma detection

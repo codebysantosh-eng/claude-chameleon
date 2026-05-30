@@ -6,7 +6,11 @@
 let raw = '';
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', chunk => { raw += chunk; });
-process.stdin.on('end', () => { run(JSON.parse(raw)); });
+process.stdin.on('end', () => {
+  let input;
+  try { input = JSON.parse(raw); } catch { console.log(JSON.stringify({ decision: 'approve' })); return; }
+  run(input);
+});
 
 function run(input) {
 
@@ -25,8 +29,7 @@ if ((tool === 'Write' || tool === 'Edit') && isPyFile && !isTestFile) {
   if (matches > 0) {
     console.log(JSON.stringify({
       decision: 'approve',
-      type: 'warning',
-      message: `${matches} print() call(s) in ${filePath}. Use structlog instead. See profile skills/SKILL.md#logging.`
+      systemMessage: `${matches} print() call(s) in ${filePath}. Use structlog instead. See profile skills/SKILL.md#logging.`
     }));
     return;
   }

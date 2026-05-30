@@ -7,7 +7,11 @@
 let raw = '';
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', chunk => { raw += chunk; });
-process.stdin.on('end', () => { run(JSON.parse(raw)); });
+process.stdin.on('end', () => {
+  let input;
+  try { input = JSON.parse(raw); } catch { console.log(JSON.stringify({ decision: 'approve' })); return; }
+  run(input);
+});
 
 function run(input) {
   const tool = input.tool_name;
@@ -48,8 +52,7 @@ function run(input) {
     if (messages.length > 0) {
       console.log(JSON.stringify({
         decision: 'approve',
-        type: 'warning',
-        message: messages.join('\n')
+        systemMessage: messages.join('\n')
       }));
       return;
     }

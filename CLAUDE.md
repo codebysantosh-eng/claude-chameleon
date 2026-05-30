@@ -13,7 +13,7 @@ claude-chameleon/
 ├── core/
 │   ├── agents/          # 8 generic agents
 │   ├── commands/        # 15 generic commands (with depth frontmatter)
-│   ├── rules/           # 5 generic rules (always-on)
+│   ├── rules/           # 7 generic rules (always-on)
 │   └── hooks/           # Core safety hooks (forge.core.*)
 ├── profiles/
 │   ├── typescript/      # TypeScript profile
@@ -22,6 +22,7 @@ claude-chameleon/
 │   ├── python-django/   # Python + Django profile
 │   ├── python-fastapi/  # Python + FastAPI profile
 │   ├── php-symfony/     # PHP + Symfony profile
+│   ├── php-laravel/     # PHP + Laravel profile
 │   └── tests/           # Profile test suite
 ├── agents/
 │   ├── stack-orchestrator.md           # Profile loader for deep commands
@@ -56,7 +57,9 @@ Each profile provides 5 required files (plus optional `mcp.json`):
 
 ## Agent → Command Map
 
-| Agent | Commands |
+"Specialist agent" = the dedicated agent a command delegates to. Independently, every `deep` command also invokes `stack-orchestrator` for profile context (see Command Depth) — so `/onboard` and `/incident` have no *specialist* agent but still spawn the orchestrator.
+
+| Specialist agent | Commands |
 |-------|---------|
 | architect | `/design` |
 | tdd-developer | `/tdd` |
@@ -66,8 +69,8 @@ Each profile provides 5 required files (plus optional `mcp.json`):
 | e2e-runner | `/e2e` |
 | performance-profiler | `/profile` |
 | code-explorer | `/explore` |
-| stack-orchestrator | (invoked by deep commands) |
-| *(none)* | `/refactor`, `/add-tests`, `/learn`, `/healthcheck`, `/onboard`, `/incident`, `/pre-deploy` |
+| stack-orchestrator | (invoked by every deep command) |
+| *(no specialist)* | `/refactor`, `/add-tests`, `/learn`, `/healthcheck`, `/onboard`, `/incident`, `/pre-deploy` |
 
 ## Command Depth
 

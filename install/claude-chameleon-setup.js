@@ -36,16 +36,24 @@ const DRY_RUN = flags['dry-run'] === true;
 // Called by uninstall.sh so machine-uninstall reuses the same hook-removal logic
 // as activate-profiles.js instead of duplicating it in an inline node heredoc.
 if (flags['remove-hooks']) {
-  const { removeForgeHooksFromSettings, loadSettings, writeSettings } = require('./lib/hooks');
+  const { removeForgeHooksFromSettings, writeSettings, removeLegacyBackup } = require('./lib/hooks');
   const settingsPath = path.join(CLAUDE_DIR, 'settings.json');
   if (!fs.existsSync(settingsPath)) {
+    if (!DRY_RUN) removeLegacyBackup(settingsPath);
     process.exit(0);
   }
   if (DRY_RUN) {
     process.stdout.write('[dry-run] would remove all forge.* hooks from settings.json\n');
     process.exit(0);
   }
-  const settings = loadSettings(settingsPath);
+  let settings;
+  try {
+    settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+  } catch {
+    // Don't delete a file we can't parse — it may hold the user's own config.
+    process.stderr.write(`⚠ Could not parse ${settingsPath} — skipping forge hook cleanup. Remove forge.* entries manually.\n`);
+    process.exit(0);
+  }
   const cleaned = removeForgeHooksFromSettings(settings, 'forge.');
   if (Object.keys(cleaned).length === 0) {
     fs.unlinkSync(settingsPath);
@@ -54,6 +62,7 @@ if (flags['remove-hooks']) {
     writeSettings(settingsPath, cleaned);
     process.stdout.write('  ✓ forge.* hooks removed\n');
   }
+  removeLegacyBackup(settingsPath);
   process.exit(0);
 }
 
