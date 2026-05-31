@@ -12,16 +12,29 @@ function loadSettings(settingsPath) {
   }
 }
 
+// Shell-quote a substituted path so spaces (and other metacharacters) survive the
+// stripped, non-interactive shell Claude runs hooks under. Without this, an interpreter
+// path like `/Users/x/Library/Application Support/.../node` (Herd/nvm on macOS) splits on
+// the space and dies with `sh: /Users/.../Application: No such file or directory` (exit 127).
+// Mirrors POSIX `shlex.quote`: leave already-safe tokens untouched (keeps output readable
+// and CI paths unchanged), single-quote everything else, escaping embedded single quotes.
+function shellQuote(value) {
+  const str = String(value);
+  if (/^[A-Za-z0-9_@%+=:,./-]+$/.test(str)) return str;
+  return `'${str.replace(/'/g, `'\\''`)}'`;
+}
+
 // Resolve a hook command's templated tokens to absolute paths. The interpreter is
 // injected here — not trusted to PATH — because Claude runs hooks in a stripped,
 // non-interactive shell that never sources nvm/fnm/volta/asdf. `nodePath` defaults to
 // process.execPath: the exact node that ran the installer, which is the node the user has.
+// Substituted values are shell-quoted (see shellQuote) so paths with spaces stay intact.
 // The trailing bare-`node ` rewrite bulletproofs legacy/third-party hooks.json authored
 // before the {{NODE}} token existed, so this PATH-dependency bug class cannot recur.
 function resolveHookCommand(command, forgeRoot, nodePath) {
-  const withNode = command.replace(/\{\{NODE\}\}/g, nodePath);
-  const withRoot = withNode.replace(/\{\{FORGE_ROOT\}\}/g, forgeRoot);
-  return withRoot.replace(/^node(?=\s)/, nodePath);
+  const withNode = command.replace(/\{\{NODE\}\}/g, () => shellQuote(nodePath));
+  const withRoot = withNode.replace(/\{\{FORGE_ROOT\}\}/g, () => shellQuote(forgeRoot));
+  return withRoot.replace(/^node(?=\s)/, () => shellQuote(nodePath));
 }
 
 // Second arg is now a settings object (not a file path) so callers can accumulate
