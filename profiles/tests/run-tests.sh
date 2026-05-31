@@ -522,6 +522,31 @@ const merged=m({hooks:{PreToolUse:[{matcher:'Bash',hooks:[{id:'forge.core.x',typ
 const cmd=merged.hooks.PreToolUse[0].hooks[0].command;
 process.exit(cmd==='/abs/node /r/x.js' ? 0:1);" 2>/dev/null \
   && pass "hooks.js: legacy bare 'node' rewritten to absolute interpreter" || fail "hooks.js: legacy bare 'node' rewritten to absolute interpreter"
+
+# hooks.js: a node path with spaces (Herd/nvm on macOS) is shell-quoted into the command.
+# Regression for 'sh: /Users/.../Application: No such file or directory' (exit 127).
+node -e "const {mergeHooksIntoSettings:m}=require('${REPO_ROOT}/install/lib/hooks.js');
+const nodePath='/Users/x/Library/Application Support/Herd/node/bin/node';
+const merged=m({hooks:{PreToolUse:[{matcher:'Bash',hooks:[{id:'forge.core.x',type:'command',command:'{{NODE}} {{FORGE_ROOT}}/x.js'}]}]}},{},{forgeRoot:'/r',nodePath});
+const cmd=merged.hooks.PreToolUse[0].hooks[0].command;
+const expected=\"'/Users/x/Library/Application Support/Herd/node/bin/node' /r/x.js\";
+process.exit(cmd===expected ? 0:1);" 2>/dev/null \
+  && pass "hooks.js: node path with spaces is shell-quoted" || fail "hooks.js: node path with spaces is shell-quoted"
+
+# hooks.js: the quoted command actually EXECUTES under a stripped PATH when the interpreter
+# lives in a directory with a space — the real-world failure, not just a string shape.
+SPACED_BIN="${TEST_TMPDIR}/with space/bin"
+mkdir -p "$SPACED_BIN"
+ln -sf "$(command -v node)" "${SPACED_BIN}/node"
+node -e "
+const {mergeHooksIntoSettings:m}=require('${REPO_ROOT}/install/lib/hooks.js');
+const {spawnSync}=require('child_process');
+const nodePath='${SPACED_BIN}/node';
+const merged=m({hooks:{PreToolUse:[{matcher:'Write',hooks:[{id:'forge.core.x',type:'command',command:'{{NODE}} {{FORGE_ROOT}}/core/hooks/scripts/large-file-warn.js'}]}]}},{},{forgeRoot:'${REPO_ROOT}',nodePath});
+const cmd=merged.hooks.PreToolUse[0].hooks[0].command;
+const r=spawnSync(cmd,{shell:true,input:'{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"/tmp/t.txt\",\"content\":\"hi\"}}',env:{PATH:'/usr/bin:/bin',HOME:process.env.HOME},timeout:10000});
+process.exit(r.status===0 ? 0:1);" 2>/dev/null \
+  && pass "hooks.js: spaced interpreter path executes under stripped PATH" || fail "hooks.js: spaced interpreter path executes under stripped PATH"
 fi  # end "lib-unit" suite
 
 # ─── Summary ──────────────────────────────────────────────────────────────────
