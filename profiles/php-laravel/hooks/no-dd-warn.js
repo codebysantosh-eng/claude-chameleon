@@ -9,7 +9,7 @@ process.stdin.setEncoding('utf8');
 process.stdin.on('data', chunk => { raw += chunk; });
 process.stdin.on('end', () => {
   let input;
-  try { input = JSON.parse(raw); } catch { console.log(JSON.stringify({ decision: 'approve' })); return; }
+  try { input = JSON.parse(raw); } catch { console.log('{}'); return; }
   run(input);
 });
 
@@ -51,12 +51,11 @@ function run(input) {
 
     if (messages.length > 0) {
       console.log(JSON.stringify({
-        decision: 'approve',
         systemMessage: messages.join('\n')
       }));
       return;
     }
   }
 
-  console.log(JSON.stringify({ decision: 'approve' }));
+  console.log('{}');
 }

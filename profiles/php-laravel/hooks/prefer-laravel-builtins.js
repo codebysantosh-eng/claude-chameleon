@@ -27,7 +27,7 @@ process.stdin.setEncoding('utf8');
 process.stdin.on('data', chunk => { raw += chunk; });
 process.stdin.on('end', () => {
   let input;
-  try { input = JSON.parse(raw); } catch { console.log(JSON.stringify({ decision: 'approve' })); return; }
+  try { input = JSON.parse(raw); } catch { console.log('{}'); return; }
   run(input);
 });
 
@@ -42,7 +42,7 @@ function run(input) {
   // Only inspect .php files; skip Blade views (.blade.php) — they end in .php
   // but use a different syntax (e.g. @env directive, not env() helper).
   if (!filePath.endsWith('.php') || filePath.endsWith('.blade.php') || (tool !== 'Write' && tool !== 'Edit')) {
-    console.log(JSON.stringify({ decision: 'approve' }));
+    console.log('{}');
     return;
   }
 
@@ -57,7 +57,7 @@ function run(input) {
     /\/app\/Console\/Commands\//.test(filePath)
   );
   if (skipPath) {
-    console.log(JSON.stringify({ decision: 'approve' }));
+    console.log('{}');
     return;
   }
 
@@ -86,12 +86,11 @@ function run(input) {
   }
 
   if (findings.length === 0) {
-    console.log(JSON.stringify({ decision: 'approve' }));
+    console.log('{}');
     return;
   }
 
   console.log(JSON.stringify({
-    decision: 'approve',
     systemMessage:
       `Laravel built-in preferred in ${filePath}:\n` +
       findings.map(f => `  • ${f}`).join('\n') +

@@ -9,7 +9,7 @@ process.stdin.setEncoding('utf8');
 process.stdin.on('data', chunk => { raw += chunk; });
 process.stdin.on('end', () => {
   let input;
-  try { input = JSON.parse(raw); } catch { console.log(JSON.stringify({ decision: 'approve' })); return; }
+  try { input = JSON.parse(raw); } catch { console.log('{}'); return; }
   run(input);
 });
 
@@ -72,12 +72,11 @@ function run(input) {
 
     if (untypedCount > 0) {
       console.log(JSON.stringify({
-        decision: 'approve',
         systemMessage: `${untypedCount} public/protected method parameter(s) lack type hints in ${filePath}. Add type hints for PHP 8.4 compatibility and IDE support.`
       }));
       return;
     }
   }
 
-  console.log(JSON.stringify({ decision: 'approve' }));
+  console.log('{}');
 }

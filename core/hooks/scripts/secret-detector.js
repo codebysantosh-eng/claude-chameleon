@@ -5,23 +5,9 @@
  * Blocks commits containing OWASP-aligned secret patterns.
  */
 
-let raw = '';
-process.stdin.setEncoding('utf8');
-process.stdin.on('data', chunk => { raw += chunk; });
-process.stdin.on('end', () => {
-  let input;
-  try {
-    input = JSON.parse(raw);
-  } catch {
-    // Fail closed: a secret guard that can't read its input must not silently let a write through.
-    console.log(JSON.stringify({
-      decision: 'block',
-      reason: 'forge.core.secret-detector: could not parse hook input — blocking to be safe. Re-run; if this persists, check the hook installation.'
-    }));
-    process.exit(0);
-  }
-  run(input);
-});
+const { readInput, allow, deny } = require('./lib/hook-io');
+
+readInput(run, { failClosed: true, label: 'forge.core.secret-detector' });
 
 function run(input) {
 const tool = input.tool_name;
@@ -101,11 +87,7 @@ function checkContent(content, source) {
 if (tool === 'Write' && toolInput.content && !isExampleFile) {
   const findings = checkContent(toolInput.content, toolInput.file_path);
   if (findings.length > 0) {
-    console.log(JSON.stringify({
-      decision: 'block',
-      reason: `Secret detected in ${toolInput.file_path}:\n${findings.join('\n')}\n\nROTATE THE SECRET IMMEDIATELY if it was real. Move it to environment variables.`
-    }));
-    process.exit(0);
+    deny(`Secret detected in ${toolInput.file_path}:\n${findings.join('\n')}\n\nROTATE THE SECRET IMMEDIATELY if it was real. Move it to environment variables.`);
   }
 }
 
@@ -113,11 +95,7 @@ if (tool === 'Write' && toolInput.content && !isExampleFile) {
 if (tool === 'Edit' && toolInput.new_string && !isExampleFile) {
   const findings = checkContent(toolInput.new_string, toolInput.file_path);
   if (findings.length > 0) {
-    console.log(JSON.stringify({
-      decision: 'block',
-      reason: `Secret detected in edit to ${toolInput.file_path}:\n${findings.join('\n')}\n\nROTATE THE SECRET IMMEDIATELY if it was real. Move it to environment variables.`
-    }));
-    process.exit(0);
+    deny(`Secret detected in edit to ${toolInput.file_path}:\n${findings.join('\n')}\n\nROTATE THE SECRET IMMEDIATELY if it was real. Move it to environment variables.`);
   }
 }
 
@@ -126,7 +104,10 @@ if (tool === 'Bash') {
   const cmd = toolInput.command || '';
   if (/(?:^|&&|;|\|)\s*git\s+commit\b/.test(cmd) || /\bgit\s+commit\s+--amend\b/.test(cmd)) {
     const { spawnSync } = require('child_process');
-    const diff = spawnSync('git', ['diff', '--cached', '--unified=0'], { encoding: 'utf8', timeout: 5000 });
+    // Resolve the repo root so the scan works regardless of the hook's cwd.
+    const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8', timeout: 5000 });
+    const cwd = top.status === 0 && top.stdout ? top.stdout.trim() : process.cwd();
+    const diff = spawnSync('git', ['diff', '--cached', '--unified=0'], { encoding: 'utf8', timeout: 5000, cwd });
     if (diff.status === 0 && diff.stdout) {
       // Only scan added lines (starts with '+' but not the '+++' file header)
       const addedContent = diff.stdout
@@ -137,16 +118,12 @@ if (tool === 'Bash') {
       if (addedContent) {
         const findings = checkContent(addedContent, 'staged changes');
         if (findings.length > 0) {
-          console.log(JSON.stringify({
-            decision: 'block',
-            reason: `Secret detected in staged changes:\n${findings.join('\n')}\n\nROTATE THE SECRET IMMEDIATELY if it was real. Move it to environment variables.`
-          }));
-          process.exit(0);
+          deny(`Secret detected in staged changes:\n${findings.join('\n')}\n\nROTATE THE SECRET IMMEDIATELY if it was real. Move it to environment variables.`);
         }
       }
     }
   }
 }
 
-console.log(JSON.stringify({ decision: 'approve' }));
+allow();
 }

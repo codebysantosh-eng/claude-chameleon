@@ -8,7 +8,7 @@ process.stdin.setEncoding('utf8');
 process.stdin.on('data', chunk => { raw += chunk; });
 process.stdin.on('end', () => {
   let input;
-  try { input = JSON.parse(raw); } catch { console.log(JSON.stringify({ decision: 'approve' })); return; }
+  try { input = JSON.parse(raw); } catch { console.log('{}'); return; }
   run(input);
 });
 
@@ -26,12 +26,11 @@ if (isTsFile && contentToCheck) {
   const anyMatches = (contentToCheck.match(/:\s*any\b/g) || []).length;
   if (anyMatches > 0) {
     console.log(JSON.stringify({
-      decision: 'approve',
       systemMessage: `${anyMatches} use(s) of \`any\` type in ${filePath}. Prefer \`unknown\` with type guards or a proper interface/type. The \`any\` type disables type safety.`
     }));
     return;
   }
 }
 
-console.log(JSON.stringify({ decision: 'approve' }));
+console.log('{}');
 }

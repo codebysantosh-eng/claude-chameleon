@@ -1,5 +1,7 @@
 'use strict';
 
+const { readInput, allow, warn } = require('./hook-io');
+
 /**
  * Shared coverage-threshold warn hook.
  * Profile hooks supply a `commandMatches` predicate and reporter `patterns`;
@@ -14,19 +16,7 @@
  * @param {number}  [opts.threshold] coverage target (default 80)
  */
 function runCoverageHook({ commandMatches, patterns, threshold = 80 }) {
-  let raw = '';
-  process.stdin.setEncoding('utf8');
-  process.stdin.on('data', chunk => { raw += chunk; });
-  process.stdin.on('end', () => {
-    let input;
-    try {
-      input = JSON.parse(raw);
-    } catch {
-      // Warn-only hook: approve on unreadable input rather than crash.
-      console.log(JSON.stringify({ decision: 'approve' }));
-      return;
-    }
-
+  readInput(input => {
     const toolInput = input.tool_input || {};
     const command = toolInput.command || '';
     const response = input.tool_response || {};
@@ -38,18 +28,13 @@ function runCoverageHook({ commandMatches, patterns, threshold = 80 }) {
         if (!match) continue;
         const coverage = parseFloat(match[1]);
         if (!isNaN(coverage) && coverage < threshold) {
-          console.log(JSON.stringify({
-            decision: 'approve',
-            systemMessage: `Coverage is ${coverage}% — below the ${threshold}% target (rules/testing.md). Run /add-tests to fill gaps.`
-          }));
-          return;
+          warn(`Coverage is ${coverage}% — below the ${threshold}% target (rules/testing.md). Run /add-tests to fill gaps.`);
         }
         break; // first matching reporter wins
       }
     }
-
-    console.log(JSON.stringify({ decision: 'approve' }));
-  });
+    allow();
+  }, { label: 'forge.coverage-threshold-warn' });
 }
 
 module.exports = { runCoverageHook };
