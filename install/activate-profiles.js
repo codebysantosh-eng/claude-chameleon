@@ -310,7 +310,7 @@ function activateProfiles(forgeRoot, profileNames, projectPath) {
       const hooksJson = JSON.parse(fs.readFileSync(hooksPath, 'utf8'));
       const incomingPhases = Object.keys(hooksJson.hooks || {});
       const hookIds = incomingPhases.flatMap(p => (hooksJson.hooks[p] || []).flatMap(e => (e.hooks || []).map(h => h.id)));
-      if (!DRY_RUN) settings = mergeHooksIntoSettings(hooksJson, settings, forgeRoot);
+      if (!DRY_RUN) settings = mergeHooksIntoSettings(hooksJson, settings, { forgeRoot });
       if (DRY_RUN) {
         log(`  [dry-run] would merge hooks: ${hookIds.join(', ')}`);
       } else {

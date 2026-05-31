@@ -6,7 +6,7 @@
           {
             "id": "forge.nextjs.next-public-secret-guard",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/profiles/nextjs/hooks/next-public-secret-guard.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/profiles/nextjs/hooks/next-public-secret-guard.js"
           }
         ],
         "matcher": "Write"
@@ -16,7 +16,7 @@
           {
             "id": "forge.nextjs.next-public-secret-guard-edit",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/profiles/nextjs/hooks/next-public-secret-guard.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/profiles/nextjs/hooks/next-public-secret-guard.js"
           }
         ],
         "matcher": "Edit"

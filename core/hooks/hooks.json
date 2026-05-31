@@ -6,7 +6,7 @@
           {
             "id": "forge.core.block-hook-bypass",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/core/hooks/scripts/block-hook-bypass.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/core/hooks/scripts/block-hook-bypass.js"
           }
         ],
         "matcher": "Bash"
@@ -16,7 +16,7 @@
           {
             "id": "forge.core.block-force-push",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/core/hooks/scripts/block-force-push.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/core/hooks/scripts/block-force-push.js"
           }
         ],
         "matcher": "Bash"
@@ -26,7 +26,7 @@
           {
             "id": "forge.core.secret-detector",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/core/hooks/scripts/secret-detector.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/core/hooks/scripts/secret-detector.js"
           }
         ],
         "matcher": "Write"
@@ -36,7 +36,7 @@
           {
             "id": "forge.core.secret-detector-edit",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/core/hooks/scripts/secret-detector.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/core/hooks/scripts/secret-detector.js"
           }
         ],
         "matcher": "Edit"
@@ -46,7 +46,7 @@
           {
             "id": "forge.core.secret-detector-bash",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/core/hooks/scripts/secret-detector.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/core/hooks/scripts/secret-detector.js"
           }
         ],
         "matcher": "Bash"
@@ -58,7 +58,7 @@
           {
             "id": "forge.core.large-file-warn",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/core/hooks/scripts/large-file-warn.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/core/hooks/scripts/large-file-warn.js"
           }
         ],
         "matcher": "Write"
@@ -68,7 +68,7 @@
           {
             "id": "forge.core.large-file-warn-edit",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/core/hooks/scripts/large-file-warn.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/core/hooks/scripts/large-file-warn.js"
           }
         ],
         "matcher": "Edit"
@@ -78,7 +78,7 @@
           {
             "id": "forge.core.env-gitignore-guard",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/core/hooks/scripts/env-gitignore-guard.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/core/hooks/scripts/env-gitignore-guard.js"
           }
         ],
         "matcher": "Write"

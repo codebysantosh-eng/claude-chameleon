@@ -508,6 +508,20 @@ const s={hooks:{PreToolUse:[{matcher:'Bash',hooks:[{type:'command',command:'node
 const c=r(s,'forge.');
 process.exit(c.hooks===undefined ? 0:1);" 2>/dev/null \
   && pass "hooks.js: removes legacy id-less hooks by command path" || fail "hooks.js: removes legacy id-less hooks by command path"
+
+# hooks.js: {{NODE}} token resolves to the absolute interpreter (never trusts PATH)
+node -e "const {mergeHooksIntoSettings:m}=require('${REPO_ROOT}/install/lib/hooks.js');
+const merged=m({hooks:{PreToolUse:[{matcher:'Bash',hooks:[{id:'forge.core.x',type:'command',command:'{{NODE}} {{FORGE_ROOT}}/x.js'}]}]}},{},{forgeRoot:'/r',nodePath:'/abs/node'});
+const cmd=merged.hooks.PreToolUse[0].hooks[0].command;
+process.exit(cmd==='/abs/node /r/x.js' ? 0:1);" 2>/dev/null \
+  && pass "hooks.js: {{NODE}} token resolves to absolute interpreter" || fail "hooks.js: {{NODE}} token resolves to absolute interpreter"
+
+# hooks.js: legacy bare 'node ' command is rewritten to the absolute interpreter (safety net)
+node -e "const {mergeHooksIntoSettings:m}=require('${REPO_ROOT}/install/lib/hooks.js');
+const merged=m({hooks:{PreToolUse:[{matcher:'Bash',hooks:[{id:'forge.core.x',type:'command',command:'node {{FORGE_ROOT}}/x.js'}]}]}},{},{forgeRoot:'/r',nodePath:'/abs/node'});
+const cmd=merged.hooks.PreToolUse[0].hooks[0].command;
+process.exit(cmd==='/abs/node /r/x.js' ? 0:1);" 2>/dev/null \
+  && pass "hooks.js: legacy bare 'node' rewritten to absolute interpreter" || fail "hooks.js: legacy bare 'node' rewritten to absolute interpreter"
 fi  # end "lib-unit" suite
 
 # ─── Summary ──────────────────────────────────────────────────────────────────

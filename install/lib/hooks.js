@@ -12,10 +12,27 @@ function loadSettings(settingsPath) {
   }
 }
 
+// Resolve a hook command's templated tokens to absolute paths. The interpreter is
+// injected here — not trusted to PATH — because Claude runs hooks in a stripped,
+// non-interactive shell that never sources nvm/fnm/volta/asdf. `nodePath` defaults to
+// process.execPath: the exact node that ran the installer, which is the node the user has.
+// The trailing bare-`node ` rewrite bulletproofs legacy/third-party hooks.json authored
+// before the {{NODE}} token existed, so this PATH-dependency bug class cannot recur.
+function resolveHookCommand(command, forgeRoot, nodePath) {
+  const withNode = command.replace(/\{\{NODE\}\}/g, nodePath);
+  const withRoot = withNode.replace(/\{\{FORGE_ROOT\}\}/g, forgeRoot);
+  return withRoot.replace(/^node(?=\s)/, nodePath);
+}
+
 // Second arg is now a settings object (not a file path) so callers can accumulate
 // merges across multiple profiles without re-reading from disk each time.
-// Pure: returns a new settings object; never mutates the input (per the kit's immutability rule).
-function mergeHooksIntoSettings(hooksJson, settings, forgeRoot) {
+// Third arg is an options object { forgeRoot, nodePath }; a bare string is accepted as
+// forgeRoot for back-compat. Pure: returns a new settings object; never mutates the input
+// (per the kit's immutability rule).
+function mergeHooksIntoSettings(hooksJson, settings, options) {
+  const opts = typeof options === 'string' ? { forgeRoot: options } : (options || {});
+  const forgeRoot = opts.forgeRoot;
+  const nodePath = opts.nodePath || process.execPath;
   const base = settings && typeof settings === 'object' ? settings : {};
   const hooks = { ...(base.hooks || {}) };
   const incoming = hooksJson.hooks || {};
@@ -27,7 +44,7 @@ function mergeHooksIntoSettings(hooksJson, settings, forgeRoot) {
       for (const hook of entry.hooks || []) {
         // Idempotent: drop any existing entry carrying the same hook ID before re-adding.
         entries = entries.filter(e => !(e.hooks || []).some(h => h.id === hook.id));
-        const resolvedHook = { ...hook, command: hook.command.replace(/\{\{FORGE_ROOT\}\}/g, forgeRoot) };
+        const resolvedHook = { ...hook, command: resolveHookCommand(hook.command, forgeRoot, nodePath) };
         entries = [...entries, { hooks: [resolvedHook], matcher: entry.matcher }];
       }
     }

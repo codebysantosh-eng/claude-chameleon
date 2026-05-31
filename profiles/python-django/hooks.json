@@ -6,7 +6,7 @@
           {
             "id": "forge.python-django.print-warn",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/profiles/python-django/hooks/print-warn.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/profiles/python-django/hooks/print-warn.js"
           }
         ],
         "matcher": "Write"
@@ -16,7 +16,7 @@
           {
             "id": "forge.python-django.print-warn-edit",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/profiles/python-django/hooks/print-warn.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/profiles/python-django/hooks/print-warn.js"
           }
         ],
         "matcher": "Edit"
@@ -26,7 +26,7 @@
           {
             "id": "forge.python-django.coverage-threshold-warn",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/profiles/python-django/hooks/coverage-threshold-warn.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/profiles/python-django/hooks/coverage-threshold-warn.js"
           }
         ],
         "matcher": "Bash"
