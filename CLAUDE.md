@@ -152,7 +152,18 @@ Add to your project's `.gitignore`:
 
 ## Adding a New Profile
 
-See [AUTHORING.md](AUTHORING.md) for the complete guide.
+See [AUTHORING.md](AUTHORING.md) for the complete guide, and [HOOKS.md](HOOKS.md) for the hook output contract (allow `{}` / `deny` / `warn` via `systemMessage`) before writing any hook.
+
+## Worktrees
+
+Core (agents/commands/rules/hooks) works in every git worktree automatically — it's installed machine-wide and the hooks use absolute paths. Stack **profiles** are per-checkout, so a new worktree starts without them. To share a checkout's profiles into a worktree:
+
+```bash
+node install/link-worktree.js --worktree <path> --source <main-checkout>
+# or, for new worktrees: install/forge-worktree-add.sh <source> <worktree-path> <branch>
+```
+
+This symlinks the gitignored profile artifacts (`rules.local`, `settings.local.json`) from the source checkout. Commit the project's `.forge.yaml` so the profile *declaration* travels to all worktrees via git.
 
 ## Platform Support
 

@@ -21,3 +21,16 @@ Scan order:
 4. Manual OWASP Top 10 walkthrough
 
 Fix all CRITICAL and HIGH findings. Report MEDIUM and LOW for user review.
+
+## Depth
+
+Like `/inspect`, `/scan` is a gate: high recall via fan-out, high precision via verification.
+
+**Thorough — default for non-trivial scope.**
+1. **Fan out** `security-scanner` agents in parallel (`model: opus`), one per area: injection · auth/authz (incl. IDOR) · secrets & crypto · SSRF/deserialization · input validation · dependency CVEs · misconfig. Each greps the relevant sinks across the codebase.
+2. **Dedup** by `file:line`.
+3. **Verify twice — no false positives.** For each candidate vuln, spawn a verifier that tries to *refute* it: is the sink reachable with attacker-controlled input, with no mitigating control? Report only confirmed vulns (with a short exploit sketch); uncertain ones go to a "needs human review" footnote.
+4. **Loop** until two consecutive rounds add nothing new.
+5. **Report** confirmed findings, severity-ranked; state coverage bounds.
+
+**Fast (`--fast`, or narrow scope).** A single `security-scanner` pass.

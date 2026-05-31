@@ -8,7 +8,7 @@ process.stdin.setEncoding('utf8');
 process.stdin.on('data', chunk => { raw += chunk; });
 process.stdin.on('end', () => {
   let input;
-  try { input = JSON.parse(raw); } catch { console.log(JSON.stringify({ decision: 'approve' })); return; }
+  try { input = JSON.parse(raw); } catch { console.log('{}'); return; }
   run(input);
 });
 
@@ -20,12 +20,11 @@ const filePath = toolInput.file_path || '';
 
 if ((tool === 'Write' || tool === 'Edit') && filePath.endsWith('.prisma')) {
   console.log(JSON.stringify({
-    decision: 'approve',
     type: 'info',
     message: `Prisma schema changed (${filePath}). Remember to:\n  1. npx prisma generate  (update the client)\n  2. npx prisma migrate dev  (create a migration)\n  3. For breaking changes: use expand-contract pattern (see skills/SKILL.md#migrations)`
   }));
   return;
 }
 
-console.log(JSON.stringify({ decision: 'approve' }));
+console.log('{}');
 }

@@ -25,6 +25,10 @@ Not style nits. Not opinions on naming unless they're load-bearing.
 
 **Approve is a valid outcome.** Adversarial *stance* during the scrutiny pass, honest *verdict* in the report. If the pass finds nothing material, the correct decision is approve — state it in the Summary. A clean review is not a failed review.
 
+**No false positives — verify before you report.** Every finding must trace to a concrete, reachable line or flow, not a guess from skimming the diff. Before reporting any finding, re-check it once as a skeptic trying to *refute* it: does the cited code actually do this, is the trigger reachable, would it truly fail at runtime? If you cannot confirm it, do not report it as a bug — drop it or label it "unverified — needs human eyes." A wrong finding costs more than a missed nit, because it teaches the author to distrust the gate.
+
+**Verifier role.** When invoked to verify another reviewer's finding (the verify pass of a deep `/inspect`), default to refuting it. Confirm the line exists, the path is reachable, and the claim holds; return `confirmed` / `refuted` / `uncertain` with the concrete reason. Confirm only what you can prove from the code — when in doubt, `uncertain`, never a false `confirmed`.
+
 ## When to Engage
 
 - Reviewing uncommitted local changes

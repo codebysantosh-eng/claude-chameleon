@@ -20,3 +20,15 @@ No optimization without measurement. Workflow:
 5. Verify no regressions
 
 Report before/after numbers for every change made.
+
+## Depth
+
+**Thorough — default.** Bottlenecks hide in different layers, so fan out — but every claim is backed by a measurement, never a guess.
+1. **Baseline** measurement first (shared context for all lenses).
+2. **Fan out** `performance-profiler` agents (`model: opus`), one per category: algorithmic · DB/queries (N+1, indexes, plans) · bundle/asset · memory/leaks · network/IO.
+3. **Dedup** hotspots.
+4. **Verify twice.** For each proposed bottleneck, a verifier must reproduce it with a measurement (profile, benchmark, or query plan) before it's reported — drop anything not reproducible. No fix without a before-number.
+5. Apply **one fix at a time**, re-measure, check for regressions.
+6. **Report** before/after for every change; list unverified hotspots separately.
+
+**Fast (`--fast`).** A single `performance-profiler` pass on the given scope.

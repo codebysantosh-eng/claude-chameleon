@@ -23,3 +23,13 @@ Produce:
 **Prefer reuse over invention.** On an established codebase, an option that leans on an existing pattern is almost always preferable to a new abstraction unless the new abstraction is explicitly justified.
 
 **Do not write any code.** Wait for the user to confirm the recommended option (or pick a different one) before implementation begins.
+
+## Depth
+
+**Thorough — default for non-trivial designs.** A single train of thought anchors on its first idea, so generate and judge independently (judge-panel, not fan-out-verify).
+1. **Generate** candidate designs in parallel (`architect`, `model: opus`) from distinct angles — e.g. MVP-first, reuse-first (lean on existing patterns), risk-first. Each produces the full Produce-list above.
+2. **Judge panel.** Score every candidate with independent judges on: fit to existing patterns (reuse), simplicity, risk, and effort.
+3. **Synthesize** the recommendation from the winner, grafting the best ideas from runners-up; cite why it beat the others.
+4. Present research + prior art + the synthesized recommendation + phased plan, then await the user's decision. **No code.**
+
+**Fast (`--fast`, or a small/well-scoped change).** A single `architect` pass producing the three-option analysis.

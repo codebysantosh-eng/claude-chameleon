@@ -446,35 +446,69 @@ fi  # end "corerules" suite
 
 # ─── 7. Hook Script Smoke Tests ───────────────────────────────────────────────
 
-if run_suite "hooks-smoke"; then
+HD="${REPO_ROOT}/core/hooks/scripts"
+HR=$(mktemp)
+# Predicates over the parsed hook output `r` (see HOOKS.md for the contract).
+DENY="r.decision==='block'||(r.hookSpecificOutput&&r.hookSpecificOutput.permissionDecision==='deny')"
+WARN="typeof r.systemMessage==='string'"
+NEUTRAL="!(${DENY})&&!r.systemMessage"
 
-HOOK_SCRIPTS_DIR="${REPO_ROOT}/core/hooks/scripts"
-
-# Each hook must emit valid JSON with a 'decision' field when given a benign Write input
-BENIGN_PAYLOAD='{"tool_name":"Write","tool_input":{"file_path":"/tmp/test.txt","content":"hello world"}}'
-HOOK_RESULT_TMP=$(mktemp)
-
-for script in secret-detector.js large-file-warn.js env-gitignore-guard.js block-hook-bypass.js block-force-push.js; do
-  hook_path="${HOOK_SCRIPTS_DIR}/${script}"
-  [[ -f "$hook_path" ]] || continue
-  # Truncate result file so a crashed hook cannot leak the prior iteration's
-  # JSON (which would otherwise register as a false pass).
-  : > "$HOOK_RESULT_TMP"
-  if echo "$BENIGN_PAYLOAD" | node "$hook_path" > "$HOOK_RESULT_TMP" 2>/dev/null; then
-    if node -e "
-const r = JSON.parse(require('fs').readFileSync('${HOOK_RESULT_TMP}', 'utf8'));
-if (!r.decision) process.exit(1);
-" 2>/dev/null; then
-      pass "hook smoke: ${script} emits valid JSON with 'decision' field"
-    else
-      fail "hook smoke: ${script} emits valid JSON with 'decision' field" "no decision field in output: $(cat ${HOOK_RESULT_TMP})"
-    fi
+# run a hook with a payload, assert the parsed output satisfies a node predicate
+assert_hook() { # label hookpath payload predicate
+  : > "$HR"
+  printf '%s' "$3" | node "$2" > "$HR" 2>/dev/null
+  if node -e "const r=JSON.parse(require('fs').readFileSync('${HR}','utf8'));process.exit((${4})?0:1);" 2>/dev/null; then
+    pass "$1"
   else
-    fail "hook smoke: ${script} emits valid JSON with 'decision' field" "non-zero exit from hook script"
+    fail "$1" "got: $(cat ${HR})"
   fi
-done
+}
 
+if run_suite "hooks-smoke"; then
+# Benign input → valid JSON and NOT a block (neutral = {} under the new contract).
+BENIGN='{"tool_name":"Write","tool_input":{"file_path":"/tmp/t.txt","content":"hello world"}}'
+for script in secret-detector.js large-file-warn.js env-gitignore-guard.js block-hook-bypass.js block-force-push.js; do
+  [[ -f "${HD}/${script}" ]] || continue
+  assert_hook "hook smoke: ${script} valid JSON + allows benign input" "${HD}/${script}" "$BENIGN" "!(${DENY})"
+done
 fi  # end "hooks-smoke" suite
+
+if run_suite "hooks-behavior"; then
+# Assembled so this test file itself doesn't trip the live secret-detector on write.
+SK="sk_""live_""AAAABBBBCCCCDDDD1111"
+assert_hook "secret-detector blocks a real secret"        "${HD}/secret-detector.js" "{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"a.js\",\"content\":\"key=${SK}\"}}" "$DENY"
+assert_hook "secret-detector allows a placeholder"        "${HD}/secret-detector.js" '{"tool_name":"Write","tool_input":{"file_path":"a.js","content":"password = \"changeme123\""}}' "$NEUTRAL"
+assert_hook "secret-detector fails closed on bad input"   "${HD}/secret-detector.js" 'garbage-not-json' "$DENY"
+assert_hook "block-force-push blocks --force"             "${HD}/block-force-push.js" '{"tool_name":"Bash","tool_input":{"command":"git push --force"}}' "$DENY"
+assert_hook "block-force-push allows a chained -f flag"   "${HD}/block-force-push.js" '{"tool_name":"Bash","tool_input":{"command":"git push origin main && grep -f p.txt"}}' "$NEUTRAL"
+assert_hook "block-hook-bypass blocks commit -n"          "${HD}/block-hook-bypass.js" '{"tool_name":"Bash","tool_input":{"command":"git commit -n -m x"}}' "$DENY"
+assert_hook "block-hook-bypass allows a plain commit"     "${HD}/block-hook-bypass.js" '{"tool_name":"Bash","tool_input":{"command":"git commit -m ok"}}' "$NEUTRAL"
+assert_hook "warn hook emits systemMessage"               "${REPO_ROOT}/profiles/typescript/hooks/console-log-warn.js" '{"tool_name":"Write","tool_input":{"file_path":"x.ts","content":"console.log(1)"}}' "$WARN"
+assert_hook "warn hook stays neutral on bad input"        "${REPO_ROOT}/profiles/typescript/hooks/console-log-warn.js" 'garbage-not-json' "$NEUTRAL"
+fi  # end "hooks-behavior" suite
+
+if run_suite "lib-unit"; then
+# yaml: 2-space AND 4-space lists, comments, quotes
+node -e "const {parseSimpleYaml:p}=require('${REPO_ROOT}/install/lib/yaml.js');
+const a=p('profiles:\n  - typescript\n  - nextjs'), b=p('# c\nprofiles:\n    - typescript');
+process.exit(a.profiles.length===2 && b.profiles[0]==='typescript' ? 0:1);" 2>/dev/null \
+  && pass "yaml: parses 2-space and 4-space lists" || fail "yaml: parses 2-space and 4-space lists"
+
+# hooks.js: merge→remove round-trip preserves user keys, strips forge, and is non-mutating
+node -e "const {mergeHooksIntoSettings:m,removeForgeHooksFromSettings:r}=require('${REPO_ROOT}/install/lib/hooks.js');
+const orig={userKey:1};
+const merged=m({hooks:{PreToolUse:[{matcher:'Bash',hooks:[{id:'forge.core.x',type:'command',command:'node {{FORGE_ROOT}}/x.js'}]}]}},orig,'/r');
+const cleaned=r(merged,'forge.');
+process.exit(orig.hooks===undefined && merged.userKey===1 && cleaned.userKey===1 && cleaned.hooks===undefined ? 0:1);" 2>/dev/null \
+  && pass "hooks.js: pure merge/remove round-trip preserves user keys" || fail "hooks.js: pure merge/remove round-trip preserves user keys"
+
+# hooks.js: remove also strips legacy id-less entries by command path
+node -e "const {removeForgeHooksFromSettings:r}=require('${REPO_ROOT}/install/lib/hooks.js');
+const s={hooks:{PreToolUse:[{matcher:'Bash',hooks:[{type:'command',command:'node /x/core/hooks/scripts/secret-detector.js'}]}]}};
+const c=r(s,'forge.');
+process.exit(c.hooks===undefined ? 0:1);" 2>/dev/null \
+  && pass "hooks.js: removes legacy id-less hooks by command path" || fail "hooks.js: removes legacy id-less hooks by command path"
+fi  # end "lib-unit" suite
 
 # ─── Summary ──────────────────────────────────────────────────────────────────
 
