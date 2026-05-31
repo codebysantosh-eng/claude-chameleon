@@ -40,7 +40,7 @@ After the code-explorer agent completes, activate stack profiles for this projec
    ```
    node {forge_root}/install/activate-profiles.js --project . --yes
    ```
-   This creates `.claude/rules/` symlinks and writes `.forge.yaml`.
+   This creates `.claude/rules.local/` symlinks and writes `.forge.yaml`.
 
 5. On no: continue without activation. No files are written.
 
