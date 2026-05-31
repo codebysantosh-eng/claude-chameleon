@@ -14,6 +14,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { spawnSync } = require('child_process');
 
 const { symlinkIfNeeded } = require('./lib/symlink');
 const { mergeHooksIntoSettings, writeSettings, loadSettings } = require('./lib/hooks');
@@ -116,7 +117,7 @@ function installCoreHooks() {
   }
   if (!fs.existsSync(CLAUDE_DIR)) fs.mkdirSync(CLAUDE_DIR, { recursive: true });
   const existing = loadSettings(settingsPath);
-  const settings = mergeHooksIntoSettings(hooksJson, existing, FORGE_ROOT);
+  const settings = mergeHooksIntoSettings(hooksJson, existing, { forgeRoot: FORGE_ROOT });
   writeSettings(settingsPath, settings);
   ok('settings.json updated');
 }
@@ -141,6 +142,44 @@ function writeGlobalYaml() {
 }
 
 // ─── Validate ─────────────────────────────────────────────────────────────────
+
+// Execute a real hook the way Claude does — under a stripped, non-interactive shell whose
+// PATH excludes any version manager (nvm/fnm/volta/asdf). This is the check that catches a
+// hook command whose interpreter only resolves in the user's login shell: it passes a manual
+// run but dies with "Exit Code 1" in production. Uses large-file-warn (PostToolUse, no side
+// effects, returns exit 0 on benign input). Tolerant: warns and passes if it can't find a
+// hook to test; only a non-zero exit from an actually-found hook is treated as an error.
+function verifyHookExecutes(settingsPath) {
+  let command;
+  try {
+    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+    const allHooks = Object.values(settings.hooks || {}).flat().flatMap(e => e.hooks || []);
+    command = (allHooks.find(h => h.id === 'forge.core.large-file-warn') || {}).command;
+  } catch {
+    warn('hook execution check skipped — settings.json not readable');
+    return true;
+  }
+  if (!command) {
+    warn('hook execution check skipped — forge.core.large-file-warn not found');
+    return true;
+  }
+
+  const benign = '{"tool_name":"Write","tool_input":{"file_path":"/tmp/forge-validate.txt","content":"hello"}}';
+  const result = spawnSync(command, {
+    shell: true,
+    input: benign,
+    env: { PATH: '/usr/bin:/bin', HOME: process.env.HOME },
+    timeout: 10000,
+  });
+  if (result.status === 0) {
+    ok('hook executes under a stripped PATH (interpreter resolved)');
+    return true;
+  }
+  err('hook FAILED under a stripped PATH — its command cannot find an interpreter.');
+  err(`  command: ${command}`);
+  err('  Re-run ./install.sh to re-resolve the absolute node path.');
+  return false;
+}
 
 function validate() {
   log('\nValidating core installation...\n');
@@ -209,6 +248,9 @@ function validate() {
       hasErrors = true;
     }
   }
+
+  // Beyond presence in settings.json, prove a hook actually runs in Claude's hook shell.
+  if (!verifyHookExecutes(settingsPath)) hasErrors = true;
 
   if (!hasErrors) {
     ok('Core installation healthy.');

@@ -6,7 +6,7 @@
           {
             "id": "forge.php-laravel.no-dd-warn",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/profiles/php-laravel/hooks/no-dd-warn.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/profiles/php-laravel/hooks/no-dd-warn.js"
           }
         ],
         "matcher": "Write"
@@ -16,7 +16,7 @@
           {
             "id": "forge.php-laravel.no-dd-warn-edit",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/profiles/php-laravel/hooks/no-dd-warn.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/profiles/php-laravel/hooks/no-dd-warn.js"
           }
         ],
         "matcher": "Edit"
@@ -26,7 +26,7 @@
           {
             "id": "forge.php-laravel.no-hardcoded-secrets",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/profiles/php-laravel/hooks/no-hardcoded-secrets.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/profiles/php-laravel/hooks/no-hardcoded-secrets.js"
           }
         ],
         "matcher": "Write"
@@ -36,7 +36,7 @@
           {
             "id": "forge.php-laravel.no-hardcoded-secrets-edit",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/profiles/php-laravel/hooks/no-hardcoded-secrets.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/profiles/php-laravel/hooks/no-hardcoded-secrets.js"
           }
         ],
         "matcher": "Edit"
@@ -48,7 +48,7 @@
           {
             "id": "forge.php-laravel.missing-type-hints",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/profiles/php-laravel/hooks/missing-type-hints-warn.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/profiles/php-laravel/hooks/missing-type-hints-warn.js"
           }
         ],
         "matcher": "Write"
@@ -58,7 +58,7 @@
           {
             "id": "forge.php-laravel.missing-type-hints-edit",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/profiles/php-laravel/hooks/missing-type-hints-warn.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/profiles/php-laravel/hooks/missing-type-hints-warn.js"
           }
         ],
         "matcher": "Edit"
@@ -68,7 +68,7 @@
           {
             "id": "forge.php-laravel.prefer-laravel-builtins",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/profiles/php-laravel/hooks/prefer-laravel-builtins.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/profiles/php-laravel/hooks/prefer-laravel-builtins.js"
           }
         ],
         "matcher": "Write"
@@ -78,7 +78,7 @@
           {
             "id": "forge.php-laravel.prefer-laravel-builtins-edit",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/profiles/php-laravel/hooks/prefer-laravel-builtins.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/profiles/php-laravel/hooks/prefer-laravel-builtins.js"
           }
         ],
         "matcher": "Edit"

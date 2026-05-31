@@ -149,7 +149,7 @@ All hook IDs **must** follow `forge.<profile-name>.<hook-name>` — never just `
           {
             "id": "forge.your-stack.some-guard",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/profiles/your-stack/hooks/some-guard.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/profiles/your-stack/hooks/some-guard.js"
           }
         ],
         "matcher": "Write"
@@ -162,7 +162,7 @@ All hook IDs **must** follow `forge.<profile-name>.<hook-name>` — never just `
 
 (Add `PostToolUse` or `Stop` entries here if needed — same structure as `PreToolUse`.)
 
-Use `{{FORGE_ROOT}}` as a placeholder — `activate-profiles.js` resolves it to the actual path at activation time.
+Start every command with `{{NODE}}`, not a bare `node` — the installer injects the absolute interpreter path. Claude runs hooks in a stripped, non-interactive shell that never sources nvm/fnm/volta/asdf, so a bare `node` fails to resolve and blocks the tool call. Use `{{FORGE_ROOT}}` for the script path; both tokens are resolved at activation time (`{{NODE}}` → the node that ran the installer, `{{FORGE_ROOT}}` → the actual repo path).
 
 Hook scripts must read stdin as JSON (Claude Code passes tool input via stdin), emit a JSON decision, and exit 0.
 

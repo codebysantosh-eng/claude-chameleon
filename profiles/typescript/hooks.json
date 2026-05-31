@@ -6,7 +6,7 @@
           {
             "id": "forge.typescript.no-any-type",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/profiles/typescript/hooks/no-any-warn.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/profiles/typescript/hooks/no-any-warn.js"
           }
         ],
         "matcher": "Write"
@@ -16,7 +16,7 @@
           {
             "id": "forge.typescript.no-any-type-edit",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/profiles/typescript/hooks/no-any-warn.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/profiles/typescript/hooks/no-any-warn.js"
           }
         ],
         "matcher": "Edit"
@@ -28,7 +28,7 @@
           {
             "id": "forge.typescript.console-log-warn",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/profiles/typescript/hooks/console-log-warn.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/profiles/typescript/hooks/console-log-warn.js"
           }
         ],
         "matcher": "Write"
@@ -38,7 +38,7 @@
           {
             "id": "forge.typescript.console-log-warn-edit",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/profiles/typescript/hooks/console-log-warn.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/profiles/typescript/hooks/console-log-warn.js"
           }
         ],
         "matcher": "Edit"
@@ -48,7 +48,7 @@
           {
             "id": "forge.typescript.coverage-threshold-warn",
             "type": "command",
-            "command": "node {{FORGE_ROOT}}/profiles/typescript/hooks/coverage-threshold-warn.js"
+            "command": "{{NODE}} {{FORGE_ROOT}}/profiles/typescript/hooks/coverage-threshold-warn.js"
           }
         ],
         "matcher": "Bash"
