@@ -26,7 +26,7 @@ claude-chameleon/
 │   └── tests/           # Profile test suite
 ├── agents/
 │   ├── stack-orchestrator.md           # Profile loader for deep commands
-│   └── stack-orchestrator-messages.md  # Handoff message templates
+│   └── stack-orchestrator-messages.md  # Recovery messages for generic-mode failures (one per REASON)
 ├── install/
 │   ├── claude-chameleon-setup.js  # Core install logic (Node.js)
 │   ├── activate-profiles.js       # Per-project profile activator (Node.js)

@@ -54,8 +54,8 @@ Not style nits. Not opinions on naming unless they're load-bearing.
 A merge gate that reviews the wrong scope is worse than none: bare `git diff` shows only *unstaged* edits and silently misses staged and already-committed work, so a normal pre-PR branch reviews as empty.
 
 **Local (default):** review the **whole branch delta vs the base**, not just unstaged edits. Base = the repo's default branch (`main`, else `master`), or the one passed in.
-- `git diff $(git merge-base HEAD <base>)` — committed + staged + unstaged changes on the branch.
-- If that is empty, fall back to `git diff HEAD` so not-yet-committed work is still reviewed.
+- `git diff $(git merge-base HEAD <base>)` — committed + staged + unstaged changes on the branch (it diffs the merge-base against the working tree, so uncommitted work is already included).
+- If neither `main` nor `master` resolves and no base was passed, ask the user for the base — never fall back to a bare `git diff`, which silently narrows to unstaged-only.
 - **`--uncommitted`:** review only working-tree changes via `git diff HEAD` (quick mid-work check).
 - Always report the scope you actually reviewed (base + commit range + whether uncommitted work was included). Never let "0 findings" hide "0 changes seen."
 

@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 # profiles/tests/run-tests.sh
 # Profile test suite for claude-chameleon.
-# Tests: format validation, detector scoring, hook ID uniqueness, cold start.
+# Tests: format validation, detector scoring, hook ID uniqueness, cold start,
+#        handoff contract, kit coherence (doctor).
 #
 # Usage:
 #   ./profiles/tests/run-tests.sh           # run all tests
 #   ./profiles/tests/run-tests.sh format    # run format tests only
 #   ./profiles/tests/run-tests.sh detect    # run detector tests only
+#   ./profiles/tests/run-tests.sh handoff   # run handoff-contract tests only
+#   ./profiles/tests/run-tests.sh doctor    # run kit-coherence tests only
 
 set -euo pipefail
 
@@ -683,6 +686,15 @@ else
   pass "doctor: detects tool/instruction mismatch"
 fi
 cp "${REPO_ROOT}/core/agents/security-scanner.md" "${DOC_COPY}/core/agents/security-scanner.md"
+
+# fault 5: CLAUDE.md depth table lists a command with no file (reverse drift — docs ahead of code)
+node -e 'const fs=require("fs"),p=process.argv[1];fs.writeFileSync(p,fs.readFileSync(p,"utf8").replace("`/audit` | Yes","`/audit`, `/ghostcmd` | Yes"))' "${DOC_COPY}/CLAUDE.md"
+if node "$DOCTOR" --forge-root "$DOC_COPY" >/dev/null 2>&1; then
+  fail "doctor: detects depth-table entry with no command file" "doctor passed a table command that has no file"
+else
+  pass "doctor: detects depth-table entry with no command file"
+fi
+cp "${REPO_ROOT}/CLAUDE.md" "${DOC_COPY}/CLAUDE.md"
 
 fi  # end "doctor" suite
 

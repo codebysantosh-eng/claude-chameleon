@@ -50,7 +50,9 @@ function collectAgents() {
       const full = path.join(dir, file);
       const body = read(full);
       const fm = parseFrontmatter(body);
-      agents.set(fm.name || file.replace(/\.md$/, ''), { file: full, rel: path.relative(ROOT, full), fm, body });
+      const key = fm.name || file.replace(/\.md$/, '');
+      if (agents.has(key)) err('agent', `${path.relative(ROOT, full)}: duplicate agent name '${key}' (shadows ${agents.get(key).rel}) — checks on one would be skipped`);
+      agents.set(key, { file: full, rel: path.relative(ROOT, full), fm, body });
     }
   }
   return agents;
@@ -87,11 +89,13 @@ function checkAgents(agents, ruleNames) {
 // ── Commands: frontmatter, valid depth, agent refs, orchestrator/depth coherence ─
 function checkCommands(agents, ruleNames, depthTable) {
   const dir = path.join(ROOT, 'core', 'commands');
+  const cmdFiles = new Set();
   for (const file of listMd(dir)) {
     const rel = path.relative(ROOT, path.join(dir, file));
     const body = read(path.join(dir, file));
     const fm = parseFrontmatter(body);
     const cmd = '/' + file.replace(/\.md$/, '');
+    cmdFiles.add(cmd);
 
     if (!fm.description) err('command', `${rel}: missing 'description'`);
     if (!fm.depth) err('command', `${rel}: missing 'depth'`);
@@ -121,6 +125,13 @@ function checkCommands(agents, ruleNames, depthTable) {
     }
 
     checkRuleRefs(rel, body, ruleNames);
+  }
+
+  // Reverse direction: every command in the CLAUDE.md depth table must have a file.
+  for (const tableCmd of depthTable.keys()) {
+    if (!cmdFiles.has(tableCmd)) {
+      err('docs', `CLAUDE.md Command Depth table lists ${tableCmd} but no core/commands/${tableCmd.slice(1)}.md exists`);
+    }
   }
 }
 
