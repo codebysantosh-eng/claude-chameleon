@@ -6,7 +6,7 @@ depth: deep
 > **Before proceeding**: invoke the `stack-orchestrator` agent with the current task.
 > Only continue once it confirms profiles are loaded or generic mode is active.
 > Parse active profiles and commands from the `<<<FORGE_HANDOFF>>>` block in its output.
-> If the orchestrator enters generic mode (no `<<<FORGE_HANDOFF>>>` block), proceed without profile-specific context.
+> If the orchestrator returns a `<<<FORGE_GENERIC_MODE>>>` block instead, proceed without profile-specific context.
 
 > **Order matters**: `/explore` maps the codebase and activates stack profiles. `/onboard` shows what Claude can do with those profiles. Run `/explore` first on a new project, then `/onboard`.
 
@@ -16,7 +16,7 @@ $ARGUMENTS
 
 Steps:
 1. **Detect context**
-   - Read `.forge.yaml` → active profiles
+   - Use the active profiles + commands from the orchestrator's `<<<FORGE_HANDOFF>>>` block (already loaded above — do not re-read `.forge.yaml`)
    - Read `CLAUDE.md` if it exists
    - Check for existing tests, CI config, recent commits
 

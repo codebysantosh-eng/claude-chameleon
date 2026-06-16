@@ -2,6 +2,8 @@
 
 Deep reference for Symfony development patterns. Load specific sections on demand.
 
+> **Core rules apply on top of this file.** These are *stack-specific* patterns only — the universal guardrails live in `~/.claude/rules/`: coverage targets in `testing.md`, the security checklist in `security.md`, accessibility in `a11y.md`, code quality in `code-quality.md`. This file complements those rules; it does not restate them.
+
 ---
 
 ## testing
@@ -445,13 +447,17 @@ framework:
 use Symfony\Component\HttpFoundation\Response;
 
 #[Route('/api/posts/{id}')]
-public function show(Post $post): Response
+public function show(Post $post, Request $request): Response
 {
     $response = $this->json($post);
     $response->setPublic();
     $response->setMaxAge(3600);
     $response->setEtag(md5($post->getUpdatedAt()->format('U')));
-    $response->isNotModified($this->request) && throw new NotModifiedException();
+
+    // isNotModified() mutates $response into a 304 (status set, body stripped)
+    // and returns true when the client's validators still match — return early.
+    $response->isNotModified($request);
+
     return $response;
 }
 ```
@@ -513,3 +519,55 @@ composer require --dev symfony/web-profiler-bundle
 # Check slow queries at /_profiler — Doctrine tab shows query count + time
 # Use EXPLAIN on any query taking > 50ms
 ```
+
+---
+
+## a11y
+
+Symfony renders server-side HTML via Twig (the profile globs `templates/**/*.twig`), so accessibility applies to every rendered view. Universal principles and severity ranking live in `~/.claude/rules/a11y.md`; this section covers the Twig/Form-component mechanics.
+
+### Form theming
+
+Symfony's Form component renders labels, widgets, and errors — but the **default themes don't link errors to their fields**. Use a form theme (or per-field markup) that wires `aria-describedby` and `aria-invalid`.
+
+```twig
+{# ✗ Bad — form_row renders errors in a sibling <ul> with no programmatic link #}
+{{ form_row(form.email) }}
+
+{# ✓ Good — explicit association #}
+{{ form_label(form.email) }}
+{{ form_widget(form.email, {
+    'attr': form.email.vars.errors|length
+        ? { 'aria-invalid': 'true', 'aria-describedby': form.email.vars.id ~ '_error' }
+        : {}
+}) }}
+{% if form.email.vars.errors|length %}
+  <span id="{{ form.email.vars.id }}_error" class="form-error">
+    {{ form_errors(form.email) }}
+  </span>
+{% endif %}
+```
+
+Better: register a custom form theme (`form_themes`) that bakes these associations into `form_row` once, so every field is correct by default. Add `help` text via the field's `help` option and Symfony links it with `aria-describedby` automatically.
+
+### Patterns
+
+| Concern | Pattern |
+|---------|---------|
+| Accessible name | `form_label()` emits `<label for>`; ensure every widget is labelled, not placeholder-only |
+| Error linking | `aria-invalid="true"` + `aria-describedby` → the `form_errors` node id (custom theme or per-field markup) |
+| Flash messages | Render `app.flashes` in an `aria-live="polite"` region (`assertive` for errors) so post-redirect feedback is announced |
+| Global form errors | `form_errors(form)` (non-field) in a `role="alert"` region at the top, focused on submit failure |
+| CSRF / hidden fields | `form_rest()` for hidden fields, but never expose them as duplicate labelled controls |
+| Required | Symfony sets `required` from constraints; keep it — don't strip it with `'required': false` for styling |
+
+### Recurring misses (catch in review)
+
+- `form_row()` used as-is — errors render unlinked to the input.
+- `app.flashes` printed in a plain `<div>` with no `aria-live`.
+- `placeholder` set as the only label via `attr`.
+- Custom widgets (Stimulus controllers) that don't manage focus or `aria-expanded`.
+
+### Tooling
+
+`axe-core`/`pa11y` against rendered pages, the Symfony Profiler to inspect rendered form markup, and a keyboard walk-through. See `~/.claude/rules/a11y.md` for the pre-commit checklist.

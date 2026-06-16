@@ -2,6 +2,8 @@
 
 Deep reference for FastAPI development patterns. Load specific sections on demand.
 
+> **Core rules apply on top of this file.** These are *stack-specific* patterns only — the universal guardrails live in `~/.claude/rules/`: coverage targets in `testing.md`, the security checklist in `security.md`, code quality in `code-quality.md`. This file complements those rules; it does not restate them. (Accessibility — `a11y.md` — is N/A for this JSON-API stack; see the `## a11y` note below.)
+
 ---
 
 ## testing
@@ -13,8 +15,7 @@ Deep reference for FastAPI development patterns. Load specific sections on deman
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
 from myapp.main import app
 from myapp.database import get_db
@@ -28,7 +29,7 @@ async def db_session():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
     async with AsyncSessionLocal() as session:
         yield session
 
@@ -347,13 +348,13 @@ async def logging_middleware(request: Request, call_next):
 
 ```python
 # database.py
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.orm import DeclarativeBase
 
 DATABASE_URL = "postgresql+asyncpg://user:pass@localhost/dbname"
 
 engine = create_async_engine(DATABASE_URL, echo=False)
-AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 class Base(DeclarativeBase):
     pass
@@ -517,3 +518,9 @@ async def add_process_time_header(request: Request, call_next):
         logger.warning("slow_request", path=request.url.path, duration=duration)
     return response
 ```
+
+---
+
+## a11y
+
+**N/A for this profile.** FastAPI is a JSON API — it renders no HTML and has no user-facing UI surface, so `~/.claude/rules/a11y.md` does not apply here. Accessibility belongs to whatever front-end consumes this API (apply that client's profile, e.g. `nextjs`). The one related responsibility on the API side: return machine-readable, field-level validation errors (FastAPI/Pydantic already do via the 422 error shape) so the consuming UI can link each error to its field. If this service ever renders templates (e.g. `Jinja2Templates` for server-rendered pages or emails), treat those templates under the universal a11y rules.

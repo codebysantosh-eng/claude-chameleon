@@ -25,6 +25,7 @@ threshold: 5
 | Secrets | .env.local | Never `NEXT_PUBLIC_` for server-side secrets |
 | Images | next/image | Always specify `sizes`, `priority` for LCP |
 | Fonts | next/font | Zero layout shift; no external font CDN |
+| a11y | @axe-core/react + eslint-plugin-jsx-a11y (in next/core-web-vitals) + Lighthouse | Keyboard walk-through every route; manage focus on `<Link>` nav |
 
 | Pattern | Rule |
 |---------|------|
@@ -43,3 +44,4 @@ threshold: 5
 | Testing | skills/SKILL.md#testing |
 | Resilience + retries | skills/SKILL.md#resilience |
 | Performance | skills/SKILL.md#performance |
+| Accessibility | skills/SKILL.md#a11y |

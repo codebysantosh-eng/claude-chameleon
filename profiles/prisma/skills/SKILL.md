@@ -2,6 +2,8 @@
 
 Deep reference for Prisma patterns. Load specific sections on demand.
 
+> **Core rules apply on top of this file.** These are *stack-specific* patterns only — the universal guardrails live in `~/.claude/rules/`: coverage targets in `testing.md`, the security checklist in `security.md`, code quality in `code-quality.md`. This file complements those rules; it does not restate them. (Accessibility — `a11y.md` — is N/A for this data-layer stack; see the `## a11y` note below.)
+
 ---
 
 ## schema
@@ -269,3 +271,9 @@ await db.user.update({ where: { id }, data: { name, bio } });
 - `DATABASE_URL` holds credentials — load it from the environment/secret manager, never commit it, never log the resolved client config.
 - Use `select` (or `omit`) so `passwordHash`, tokens, and internal columns are never returned to clients — `findMany()` with no projection leaks every column.
 - Scope every query by the authenticated principal (`where: { id, ownerId: session.userId }`) — a bare `where: { id }` is an insecure-direct-object-reference waiting to happen.
+
+---
+
+## a11y
+
+**N/A for this profile.** Prisma is a data-access layer — it renders no UI, so `~/.claude/rules/a11y.md` does not apply here. Accessibility belongs to the application layer that consumes this client (apply that stack's profile, e.g. `nextjs`).

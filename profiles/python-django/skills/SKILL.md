@@ -2,6 +2,8 @@
 
 Deep reference for Django development patterns. Load specific sections on demand.
 
+> **Core rules apply on top of this file.** These are *stack-specific* patterns only — the universal guardrails live in `~/.claude/rules/`: coverage targets in `testing.md`, the security checklist in `security.md`, accessibility in `a11y.md`, code quality in `code-quality.md`. This file complements those rules; it does not restate them.
+
 ---
 
 ## testing
@@ -373,3 +375,54 @@ REST_FRAMEWORK = {
     'ORDERING': '-created_at',
 }
 ```
+
+---
+
+## a11y
+
+Django renders server-side HTML (templates, the admin, and auto-rendered forms), so accessibility applies to every templated view. Universal principles and severity ranking live in `~/.claude/rules/a11y.md`; this section covers the Django-specific mechanics. (Pure DRF JSON APIs with a separate SPA front-end push a11y to that front-end's profile.)
+
+### Form rendering
+
+Django's default form rendering does **not** wire up error associations for you — you must.
+
+```django
+{# ✗ Bad — error floats free, no programmatic link, label not associated #}
+{{ form.email }}
+{% if form.email.errors %}<span class="error">{{ form.email.errors }}</span>{% endif %}
+
+{# ✓ Good — label `for`, aria-invalid, aria-describedby → error node #}
+<label for="{{ form.email.id_for_label }}">Email</label>
+<input type="email"
+       name="{{ form.email.html_name }}"
+       id="{{ form.email.id_for_label }}"
+       value="{{ form.email.value|default:'' }}"
+       {% if form.email.errors %}aria-invalid="true" aria-describedby="{{ form.email.id_for_label }}-error"{% endif %}>
+{% if form.email.errors %}
+  <span id="{{ form.email.id_for_label }}-error" class="error">{{ form.email.errors|striptags }}</span>
+{% endif %}
+```
+
+Prefer a reusable field-include partial (or a widget library — `django-crispy-forms`/`crispy-tailwind`, or `django-widget-tweaks` to add `aria-*` attributes) so every field is wired the same way. Set `Field(..., help_text=...)` and link it with `aria-describedby` too.
+
+### Patterns
+
+| Concern | Pattern |
+|---------|---------|
+| Accessible name | `<label for="{{ field.id_for_label }}">`; never rely on placeholder as the only label |
+| Error linking | `aria-invalid="true"` + `aria-describedby` → the error node's id (built from `id_for_label`) |
+| Flash / messages | Render the `messages` framework in an `aria-live="polite"` region (`assertive` for errors) so post-redirect feedback is announced |
+| Required fields | `required` attribute (not just a visual `*`); the asterisk needs text or `aria-label="required"` |
+| Admin / formsets | Dynamically-added inline rows must move focus to the new row and keep label/`for` associations intact |
+| Non-field errors | `form.non_field_errors` rendered in a `role="alert"` region at the top of the form, focused on submit failure |
+
+### Recurring misses (catch in review)
+
+- Field errors rendered with no `aria-describedby`/`aria-invalid` link to the input.
+- `messages` framework output as a plain `<div>` with no `aria-live` — success/error after redirect is silent.
+- Placeholder used as the only label (disappears on input, invisible to many SR configurations).
+- Required marked with a visual `*` only, no programmatic `required`.
+
+### Tooling
+
+`axe-core` / `pa11y` against rendered pages (CI-friendly), `django-test-plus` or Playwright for keyboard walk-throughs, and the browser a11y tree for manual checks. See `~/.claude/rules/a11y.md` for the pre-commit checklist.

@@ -6,7 +6,7 @@ depth: deep
 > **Before proceeding**: invoke the `stack-orchestrator` agent with the current task.
 > Only continue once it confirms profiles are loaded or generic mode is active.
 > Parse active profiles and commands from the `<<<FORGE_HANDOFF>>>` block in its output.
-> If the orchestrator enters generic mode (no `<<<FORGE_HANDOFF>>>` block), proceed without profile-specific context.
+> If the orchestrator returns a `<<<FORGE_GENERIC_MODE>>>` block instead, proceed without profile-specific context.
 
 Initiate incident response for:
 
@@ -26,6 +26,12 @@ $ARGUMENTS
 - Check recent deploys (`git log --oneline -10`)
 - Check dependencies / external services
 - Identify the likely root cause
+
+**Delegate the deep dive when it pays off** (keep the incident timeline in this thread; spawn specialists for focused sub-investigations and fold their findings back in):
+- Suspected code regression in a known area → `error-resolver` (`model: opus`) to pinpoint and fix-forward the breaking change.
+- Suspected breach, leaked secret, or exploited endpoint → `security-scanner` (`model: opus`) to confirm the vector and patch CRITICAL/HIGH.
+- Suspected performance/resource exhaustion (latency, OOM, connection pool) → `performance-profiler` (`model: opus`) to locate the hotspot with a measurement.
+- Forward the `<<<FORGE_HANDOFF>>>` block into any specialist you spawn.
 
 ## Phase 3: Mitigate
 - Fix forward (fastest safe fix) OR rollback (revert last deploy)

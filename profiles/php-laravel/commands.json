@@ -1,6 +1,6 @@
 {
   "profile": "php-laravel",
-  "filePatterns": ["app/**/*.php", "tests/**/*.php", "config/**/*.php", "database/**/*.php", "routes/**/*.php"],
+  "filePatterns": ["app/**/*.php", "tests/**/*.php", "config/**/*.php", "database/**/*.php", "routes/**/*.php", "resources/views/**/*.blade.php"],
   "commands": {
     "test": "php artisan test",
     "lint": "composer phpstan",

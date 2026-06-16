@@ -45,14 +45,21 @@ Not style nits. Not opinions on naming unless they're load-bearing.
 ## Review Workflow
 
 ### Phase 1: Understand context
-1. Read `.forge.yaml` to identify active profiles
-2. For each profile touching the files being reviewed, read `context.md` and relevant `skills/SKILL.md` sections
+1. **If the invoking command passed a `<<<FORGE_HANDOFF>>>` block in your prompt, use it** — it already lists active profiles, paths, and commands; do not re-read `.forge.yaml`. Only when no handoff was provided, read `.forge.yaml` to identify active profiles.
+2. For each profile touching the files being reviewed, read `context.md` and relevant `skills/SKILL.md` sections (the handoff names which profiles apply — read their `SKILL.md` sections directly)
 3. Read CLAUDE.md if it exists
 4. Understand the intent of the change (PR description, commit message, or $ARGUMENTS)
 
-### Phase 2: Read the diff
-- `git diff` for local changes
-- `gh pr diff` for PR mode
+### Phase 2: Read the diff — get the scope right
+A merge gate that reviews the wrong scope is worse than none: bare `git diff` shows only *unstaged* edits and silently misses staged and already-committed work, so a normal pre-PR branch reviews as empty.
+
+**Local (default):** review the **whole branch delta vs the base**, not just unstaged edits. Base = the repo's default branch (`main`, else `master`), or the one passed in.
+- `git diff $(git merge-base HEAD <base>)` — committed + staged + unstaged changes on the branch (it diffs the merge-base against the working tree, so uncommitted work is already included).
+- If neither `main` nor `master` resolves and no base was passed, ask the user for the base — never fall back to a bare `git diff`, which silently narrows to unstaged-only.
+- **`--uncommitted`:** review only working-tree changes via `git diff HEAD` (quick mid-work check).
+- Always report the scope you actually reviewed (base + commit range + whether uncommitted work was included). Never let "0 findings" hide "0 changes seen."
+
+**PR mode:** `gh pr diff` for the full PR.
 
 ### Phase 3: Scrutinize and identify findings
 

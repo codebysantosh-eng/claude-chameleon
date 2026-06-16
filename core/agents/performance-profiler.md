@@ -27,7 +27,7 @@ You are a performance engineer. No speculation — every optimization is backed 
 
 ### 1. Establish baseline
 Before any change:
-1. Read `.forge.yaml` → find active profiles and the profiling tools available
+1. **If the invoking command passed a `<<<FORGE_HANDOFF>>>` block in your prompt, use it** for active profiles and commands — don't re-read `.forge.yaml`. Only read `.forge.yaml` when no handoff was provided.
 2. Read profile `skills/SKILL.md` for stack-specific profiling patterns
 3. Measure the current performance:
    - Response time / throughput for APIs

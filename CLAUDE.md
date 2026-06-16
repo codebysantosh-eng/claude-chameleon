@@ -11,8 +11,8 @@ claude-chameleon is a composable Claude Code system: one generic set of agents, 
 ```
 claude-chameleon/
 ├── core/
-│   ├── agents/          # 8 generic agents
-│   ├── commands/        # 15 generic commands (with depth frontmatter)
+│   ├── agents/          # 10 generic agents
+│   ├── commands/        # 19 generic commands (with depth frontmatter)
 │   ├── rules/           # 7 generic rules (always-on)
 │   └── hooks/           # Core safety hooks (forge.core.*)
 ├── profiles/
@@ -26,11 +26,13 @@ claude-chameleon/
 │   └── tests/           # Profile test suite
 ├── agents/
 │   ├── stack-orchestrator.md           # Profile loader for deep commands
-│   └── stack-orchestrator-messages.md  # Handoff message templates
+│   └── stack-orchestrator-messages.md  # Recovery messages for generic-mode failures (one per REASON)
 ├── install/
 │   ├── claude-chameleon-setup.js  # Core install logic (Node.js)
 │   ├── activate-profiles.js       # Per-project profile activator (Node.js)
 │   ├── forge-ci-runner.js         # CI command runner (Node.js)
+│   ├── print-handoff.js           # Deterministic stack-orchestrator handoff generator (Node.js)
+│   ├── forge-doctor.js            # Static kit-coherence auditor (Node.js) — CI gate
 │   └── lib/
 │       ├── yaml.js                # Shared YAML parser/writer
 │       ├── symlink.js             # Symlink helpers
@@ -69,15 +71,18 @@ Each profile provides 5 required files (plus optional `mcp.json`):
 | e2e-runner | `/e2e` |
 | performance-profiler | `/profile` |
 | code-explorer | `/explore` |
+| docs-writer | `/docs` |
+| dependency-manager | `/deps` |
+| code-inspector + security-scanner + performance-profiler | `/audit` (composes all three in one sweep) |
 | stack-orchestrator | (invoked by every deep command) |
-| *(no specialist)* | `/refactor`, `/add-tests`, `/learn`, `/healthcheck`, `/onboard`, `/incident`, `/pre-deploy` |
+| *(no specialist)* | `/refactor`, `/add-tests`, `/learn`, `/healthcheck`, `/onboard`, `/incident`, `/pre-deploy`, `/pr` |
 
 ## Command Depth
 
 | Depth | Commands | Orchestrator? |
 |-------|----------|--------------|
-| `routine` | `/tdd`, `/fix`, `/healthcheck`, `/refactor`, `/add-tests`, `/pre-deploy` | No — reads `rules.md`; agents may load `skills/SKILL.md` sections on demand |
-| `deep` | `/scan`, `/inspect`, `/design`, `/e2e`, `/profile`, `/incident`, `/onboard` | Yes — loads `context.md` + `skills/SKILL.md` sections |
+| `routine` | `/tdd`, `/fix`, `/healthcheck`, `/refactor`, `/add-tests`, `/pre-deploy`, `/docs`, `/deps`, `/pr` | No — reads `rules.md`; agents may load `skills/SKILL.md` sections on demand |
+| `deep` | `/scan`, `/inspect`, `/design`, `/e2e`, `/profile`, `/incident`, `/onboard`, `/audit` | Yes — loads `context.md` + `skills/SKILL.md` sections |
 | `explore` | `/explore`, `/learn` | No |
 
 ## Installation
@@ -132,6 +137,7 @@ First listed profile wins on file extension collision.
 - `context.md`: markdown tables, on-demand only
 - `skills/SKILL.md`: prose + code, named `##` sections, loaded by section
 - Install: symlinks only — `git pull` on claude-chameleon updates all installs
+- Orchestrator handoff: generated **deterministically** by `install/print-handoff.js` (not hand-formatted by the LLM). The `stack-orchestrator` agent runs it and returns stdout verbatim. Success → a versioned `<<<FORGE_HANDOFF>>>` block; any failure → an explicit `<<<FORGE_GENERIC_MODE>>>` block with a `REASON:` code (never a silent absence). Field names are a contract consumed by every deep command and specialist agent — change them in the generator and the docs together. Pinned by the `handoff` test suite.
 
 ## What to commit from `.claude/`
 
@@ -173,7 +179,29 @@ This symlinks the gitignored profile artifacts (`rules.local`, `settings.local.j
 ## Running Profile Tests
 
 ```bash
-./profiles/tests/run-tests.sh           # all tests
+./profiles/tests/run-tests.sh           # all tests (includes handoff + doctor suites)
 ./profiles/tests/run-tests.sh format    # format validation only
 ./profiles/tests/run-tests.sh detect    # detector scoring only
+./profiles/tests/run-tests.sh handoff   # deterministic handoff contract only
+./profiles/tests/run-tests.sh doctor    # kit-coherence audit only
 ```
+
+## Kit Coherence (forge-doctor)
+
+`install/forge-doctor.js` statically audits the whole kit's internal cross-references and fails CI on any contradiction. Run it before opening a PR:
+
+```bash
+node install/forge-doctor.js
+```
+
+It checks, among other things:
+- every command's `depth` is valid **and matches the CLAUDE.md Command Depth table**
+- `deep` commands invoke `stack-orchestrator` + reference the `<<<FORGE_HANDOFF>>>` contract; non-deep commands don't
+- every agent named in a command exists; every agent has a valid two-tier `model` (opus|haiku) and known tools
+- an agent told to use a **tool** in its body actually has that tool granted (catches the security-scanner-class bug)
+- every profile has the required files, a `## a11y` section, valid `commands.json` keys, and a `rules.md` ≤ 4 lines
+- every `skills/SKILL.md#section` referenced from a `context.md` resolves
+- every `~/.claude/rules/<x>.md` reference resolves to a real core rule
+- the handoff generator, orchestrator doc, and deep commands all agree on the contract field names
+
+The `doctor` test suite proves the auditor both passes the committed kit and catches injected faults.

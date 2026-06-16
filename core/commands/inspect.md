@@ -6,13 +6,21 @@ depth: deep
 > **Before proceeding**: invoke the `stack-orchestrator` agent with the current task.
 > Only continue once it confirms profiles are loaded or generic mode is active.
 > Parse active profiles and commands from the `<<<FORGE_HANDOFF>>>` block in its output.
-> If the orchestrator enters generic mode (no `<<<FORGE_HANDOFF>>>` block), proceed without profile-specific context.
+> If the orchestrator returns a `<<<FORGE_GENERIC_MODE>>>` block instead, proceed without profile-specific context.
+> **Forward the `<<<FORGE_HANDOFF>>>` block verbatim into each spawned `code-inspector`'s prompt** so they use the already-loaded profile context instead of re-reading `.forge.yaml`.
 
 Review:
 
 $ARGUMENTS
 
-**Local mode** (no PR number): review uncommitted changes via `git diff`.
+**Local mode** (default, no PR number): review the **full branch delta vs the base** — every change on this branch that isn't on the base yet, including **committed, staged, and unstaged** work. This matches what the PR will contain, so you can gate the change before pushing.
+- Base = the repo's default branch (`main`, else `master`), unless a base branch is given in `$ARGUMENTS`.
+- Diff to review: `git diff $(git merge-base HEAD <base>)` — merge-base, so an advancing base doesn't pollute the diff. This diffs the merge-base against the working tree, so committed + staged + unstaged work is all already included.
+- If neither `main` nor `master` resolves (detached HEAD, renamed default branch) and no base was given in `$ARGUMENTS`, **ask the user for the base** — do not fall back to a bare `git diff`, which silently narrows the scope to unstaged-only (the exact failure this gate prevents).
+- **State the reviewed scope at the top of the report** (base, commit range, whether uncommitted work was included) — never let "0 findings" be confused with "0 changes seen."
+
+**`--uncommitted`** (escape hatch): review only working-tree changes (staged + unstaged) via `git diff HEAD` — a quick mid-work check, not the full branch.
+
 **PR mode** (PR number or URL provided): fetch diff, analyze, post findings as a single structured review body (grouped by file and severity), leave a review decision. Do not post line-level inline comments.
 
 Apply the active profile's patterns and forbidden rules per file (match the profile to each file's stack on cross-stack diffs).

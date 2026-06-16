@@ -2,6 +2,8 @@
 
 Deep reference for Next.js 14+ App Router patterns. Load specific sections on demand.
 
+> **Core rules apply on top of this file.** These are *stack-specific* patterns only — the universal guardrails live in `~/.claude/rules/`: coverage targets in `testing.md`, the security checklist in `security.md`, accessibility in `a11y.md`, code quality in `code-quality.md`. This file complements those rules; it does not restate them.
+
 ---
 
 ## app-router
@@ -392,3 +394,31 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
   };
 }
 ```
+
+---
+
+## a11y
+
+Next.js renders the DOM via React. The universal principles and severity ranking live in `~/.claude/rules/a11y.md`; the React/DOM implementation patterns (accessible names, error linking, focus management, `sr-only`) are in the **typescript profile's `skills/SKILL.md#a11y`** — don't duplicate them, apply them. This section adds only the App-Router-specific concerns.
+
+### App Router specifics
+
+| Concern | Pattern |
+|---------|---------|
+| Route-change focus | Client-side nav (`<Link>`) does **not** move focus or announce — a screen-reader user is stranded on the old page. Move focus to the new page's `<h1>` (or a route-announcer region) in a `useEffect` keyed on `usePathname()`, or render an `aria-live="assertive"` region that announces the new page title. |
+| `next/link` | Renders a real `<a href>` — keep the link text descriptive; never wrap a whole card in a link with no accessible name. Don't put `role="button"` on a link that navigates. |
+| `next/image` | `alt` is required-by-lint but not enforced as *meaningful* — decorative images get `alt=""`, content images get a real description. `priority` the LCP image so it's not lazy-loaded out of the a11y tree. |
+| Server Actions + forms | Server Component forms still need the boundary patterns: bind errors returned from the action to the field with `aria-describedby`, set `aria-invalid`, and announce the result. `useActionState` error objects must reach an `aria-live` region or focus the first invalid field. |
+| Client Components | Interactivity (menus, dialogs, tabs) lives behind `"use client"` — that's where focus trap/return, `aria-expanded`, and keyboard handlers belong. A Server Component cannot manage focus. |
+| Streaming / `loading.tsx` | Suspense fallbacks swap content in asynchronously — give the fallback `aria-busy="true"` (or an `aria-live` status) so the swap is perceivable, not silent. |
+
+### Recurring misses (catch in review)
+
+- `<Link>` navigation with no focus management — SR/keyboard user keeps focus on the old, now-unmounted page.
+- `next/image` content image with `alt=""` (or a filename) instead of a real description.
+- Server Action validation error rendered but not linked to its field (`aria-describedby`) or announced.
+- `loading.tsx` / Suspense fallback with no `aria-busy`/`aria-live` — the page silently changes under the user.
+
+### Tooling
+
+`@axe-core/react` (dev-mode audit), `eslint-plugin-jsx-a11y` (lint-time, included in `next/core-web-vitals`), Lighthouse a11y category in CI, and a keyboard-only walk-through of every interactive route. See `~/.claude/rules/a11y.md` for the pre-commit checklist.

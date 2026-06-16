@@ -250,6 +250,8 @@ Rules:
 - [ ] `rules.md` ≤ 4 lines
 - [ ] `context.md` uses markdown tables (not key-value, not prose)
 - [ ] `skills/SKILL.md` has named `##` sections that `context.md` references by anchor
+- [ ] `skills/SKILL.md` has a `## a11y` section (stack-specific patterns, or an explicit "N/A" note for non-UI stacks) — the a11y rule dereferences it
+- [ ] **`node install/forge-doctor.js` passes** — the coherence auditor checks every cross-reference (skill anchors, rule refs, required keys, a11y) and runs in CI
 - [ ] Detector threshold requires 2+ signals (no single-file activation)
 - [ ] **Detector passes the automated test suite** — add your profile's fixture to `profiles/tests/run-tests.sh` (positive + negative case) and verify `./profiles/tests/run-tests.sh detect` passes
 - [ ] `file-contains` patterns cover all common dependency file formats for this stack

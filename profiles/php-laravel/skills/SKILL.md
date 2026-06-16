@@ -2,6 +2,8 @@
 
 Deep reference for Laravel development patterns. Load specific sections on demand.
 
+> **Core rules apply on top of this file.** These are *stack-specific* patterns only — the universal guardrails live in `~/.claude/rules/`: coverage targets in `testing.md`, the security checklist in `security.md`, accessibility in `a11y.md`, code quality in `code-quality.md`. This file complements those rules; it does not restate them.
+
 ---
 
 ## laravel-first
@@ -308,3 +310,51 @@ $posts = Post::where('published_at', '<=', now())
 // Bad: raw SQL
 DB::select('SELECT * FROM posts WHERE published_at <= ?', [now()]);
 ```
+
+---
+
+## a11y
+
+Laravel renders server-side HTML via Blade (the profile globs `resources/views/**/*.blade.php`), so accessibility applies to every rendered view. Universal principles and severity ranking live in `~/.claude/rules/a11y.md`; this section covers the Blade mechanics. (Inertia/Vue or API-only front-ends push a11y to the front-end's own profile.)
+
+### Form fields with `@error`
+
+Blade's `@error` directive is the idiomatic hook — use it to drive `aria-invalid` and `aria-describedby`, not just to print red text.
+
+```blade
+{{-- ✗ Bad — error printed below, no programmatic link --}}
+<input type="email" name="email" value="{{ old('email') }}">
+@error('email')<span class="error">{{ $message }}</span>@enderror
+
+{{-- ✓ Good --}}
+<label for="email">Email</label>
+<input type="email" id="email" name="email" value="{{ old('email') }}"
+       @error('email') aria-invalid="true" aria-describedby="email-error" @enderror>
+@error('email')
+  <span id="email-error" class="error">{{ $message }}</span>
+@enderror
+```
+
+Extract this into a `<x-form.input name="email" label="Email"/>` Blade component so every field is wired identically — the component owns the `for`/`id`/`aria-describedby` wiring once.
+
+### Patterns
+
+| Concern | Pattern |
+|---------|---------|
+| Accessible name | `<label for>` matching the input `id`; never placeholder-only |
+| Error linking | `@error('field')` → `aria-invalid="true"` + `aria-describedby="field-error"` on the input, with a matching error node id |
+| Flash messages | Render `session('status')` / error bags in an `aria-live="polite"` region (`assertive` for errors) so post-redirect feedback is announced |
+| Validation summary | A `role="alert"` region listing `$errors->all()` at the top of the form, focused on submit failure |
+| Old input | `old('field')` preserves values on validation redirect — required so the user isn't re-entering data they can't see |
+| Required | `required` attribute from the Form Request rules, not just a visual marker |
+
+### Recurring misses (catch in review)
+
+- `@error` used only to print text — no `aria-invalid`/`aria-describedby` on the field.
+- `session('status')` / `$errors` rendered in a plain `<div>` with no `aria-live`.
+- Placeholder used as the only label.
+- Livewire/Alpine interactive components that don't manage focus or announce `wire:loading` state (`aria-busy`).
+
+### Tooling
+
+`axe-core`/`pa11y` against rendered pages, Dusk or Playwright for keyboard walk-throughs, and the browser a11y tree. See `~/.claude/rules/a11y.md` for the pre-commit checklist.
