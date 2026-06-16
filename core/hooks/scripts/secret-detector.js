@@ -126,7 +126,13 @@ if (tool === 'NotebookEdit' && toolInput.new_source && !isExampleFile) {
 // Scan staged additions before git commit
 if (tool === 'Bash') {
   const cmd = toolInput.command || '';
-  if (/(?:^|&&|;|\|)\s*git\s+commit\b/.test(cmd) || /\bgit\s+commit\s+--amend\b/.test(cmd)) {
+  // Match `git commit` even when preceded by env-var assignments (`FOO=bar git commit`)
+  // or global options between `git` and `commit` (`git -c k=v commit`, `git --no-pager
+  // commit`). Each of those evades a strict `git\s+commit` trigger and would let a staged
+  // secret commit unscanned. The trigger only needs to FIRE the diff scan; over-firing is
+  // harmless (the scan finds nothing on a no-op), so we accept a broad `git ... commit`.
+  const isGitCommit = /(?:^|&&|;|\|)\s*(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*git\s+(?:-c\s+\S+\s+|--?\S+\s+)*commit\b/.test(cmd);
+  if (isGitCommit) {
     const { spawnSync } = require('child_process');
     // Resolve the repo root so the scan works regardless of the hook's cwd.
     const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8', timeout: 5000 });

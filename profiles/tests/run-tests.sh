@@ -489,6 +489,9 @@ assert_hook "block-force-push blocks force+lease combo"   "${HD}/block-force-pus
 assert_hook "block-force-push allows --force-with-lease"  "${HD}/block-force-push.js" '{"tool_name":"Bash","tool_input":{"command":"git push --force-with-lease"}}' "$NEUTRAL"
 assert_hook "block-force-push blocks bundled -fq"         "${HD}/block-force-push.js" '{"tool_name":"Bash","tool_input":{"command":"git push -fq origin main"}}' "$DENY"
 assert_hook "block-force-push allows multiline grep -f"   "${HD}/block-force-push.js" '{"tool_name":"Bash","tool_input":{"command":"git push origin main\ngrep -f patterns file"}}' "$NEUTRAL"
+assert_hook "block-force-push blocks quoted --force"      "${HD}/block-force-push.js" '{"tool_name":"Bash","tool_input":{"command":"git push \"--force\""}}' "$DENY"
+assert_hook "block-force-push blocks push.force=1 config"  "${HD}/block-force-push.js" '{"tool_name":"Bash","tool_input":{"command":"git -c push.force=1 push origin main"}}' "$DENY"
+assert_hook "block-force-push allows -c push.* on non-push" "${HD}/block-force-push.js" '{"tool_name":"Bash","tool_input":{"command":"git -c push.autoSetupRemote=true clean -fd"}}' "$NEUTRAL"
 assert_hook "block-hook-bypass blocks commit -n"          "${HD}/block-hook-bypass.js" '{"tool_name":"Bash","tool_input":{"command":"git commit -n -m x"}}' "$DENY"
 assert_hook "block-hook-bypass blocks real --no-verify"   "${HD}/block-hook-bypass.js" '{"tool_name":"Bash","tool_input":{"command":"git commit --no-verify -m x"}}' "$DENY"
 assert_hook "block-hook-bypass allows a plain commit"     "${HD}/block-hook-bypass.js" '{"tool_name":"Bash","tool_input":{"command":"git commit -m ok"}}' "$NEUTRAL"
@@ -564,6 +567,14 @@ const cmd=merged.hooks.PreToolUse[0].hooks[0].command;
 const r=spawnSync(cmd,{shell:true,input:'{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"/tmp/t.txt\",\"content\":\"hi\"}}',env:{PATH:'/usr/bin:/bin',HOME:process.env.HOME},timeout:10000});
 process.exit(r.status===0 ? 0:1);" 2>/dev/null \
   && pass "hooks.js: spaced interpreter path executes under stripped PATH" || fail "hooks.js: spaced interpreter path executes under stripped PATH"
+
+# mcp.js: bare-command allowlist — reject path-qualified commands, accept bare allowlisted
+node -e "const {mergeMcpIntoSettings:m}=require('${REPO_ROOT}/install/lib/mcp.js');
+const s={};
+m({mcpServers:{good:{command:'npx',args:['x']},bad:{command:'/usr/bin/npx',args:['x']},evil:{command:'../evil/npx',args:['x']}}},s,{},'/tmp',false,'test');
+const k=Object.keys(s.mcpServers||{});
+process.exit(k.includes('good') && !k.includes('bad') && !k.includes('evil') ? 0:1);" 2>/dev/null \
+  && pass "mcp.js: rejects path-qualified commands, accepts bare allowlisted" || fail "mcp.js: rejects path-qualified commands, accepts bare allowlisted"
 fi  # end "lib-unit" suite
 
 # ─── Summary ──────────────────────────────────────────────────────────────────
