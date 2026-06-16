@@ -12,7 +12,7 @@ readInput(run, { failClosed: true, label: 'forge.core.secret-detector' });
 function run(input) {
 const tool = input.tool_name;
 const toolInput = input.tool_input || {};
-const targetPath = toolInput.file_path || '';
+const targetPath = toolInput.file_path || toolInput.notebook_path || '';
 
 // Example/template files hold intentional placeholders — skip single-file scans for them.
 // (.env.local is NOT skipped: it routinely holds real secrets.)
@@ -68,7 +68,12 @@ try {
 const allPatterns = [...CORE_PATTERNS, ...extraPatterns];
 
 function checkContent(content, source) {
-  const lines = content.split('\n');
+  // Normalize before scanning. Notebook cell source is officially `string | string[]`
+  // (the array form is the canonical on-disk shape), and Write/Edit payloads could be
+  // non-strings. Coerce to a string so .split never throws — a throw here exits non-zero,
+  // which fails OPEN under the hook contract and would let a secret slip past.
+  const text = Array.isArray(content) ? content.join('') : String(content == null ? '' : content);
+  const lines = text.split('\n');
   const findings = [];
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -96,6 +101,25 @@ if (tool === 'Edit' && toolInput.new_string && !isExampleFile) {
   const findings = checkContent(toolInput.new_string, toolInput.file_path);
   if (findings.length > 0) {
     deny(`Secret detected in edit to ${toolInput.file_path}:\n${findings.join('\n')}\n\nROTATE THE SECRET IMMEDIATELY if it was real. Move it to environment variables.`);
+  }
+}
+
+// Check MultiEdit edits[] — scan every inserted new_string (not the replaced text)
+if (tool === 'MultiEdit' && Array.isArray(toolInput.edits) && !isExampleFile) {
+  const inserted = toolInput.edits.map(e => (e && e.new_string) || '').join('\n');
+  if (inserted) {
+    const findings = checkContent(inserted, targetPath);
+    if (findings.length > 0) {
+      deny(`Secret detected in edit to ${targetPath}:\n${findings.join('\n')}\n\nROTATE THE SECRET IMMEDIATELY if it was real. Move it to environment variables.`);
+    }
+  }
+}
+
+// Check NotebookEdit new_source (the code being written into a notebook cell)
+if (tool === 'NotebookEdit' && toolInput.new_source && !isExampleFile) {
+  const findings = checkContent(toolInput.new_source, targetPath);
+  if (findings.length > 0) {
+    deny(`Secret detected in ${targetPath}:\n${findings.join('\n')}\n\nROTATE THE SECRET IMMEDIATELY if it was real. Move it to environment variables.`);
   }
 }
 

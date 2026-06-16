@@ -55,7 +55,7 @@ if (flags['remove-hooks']) {
     process.stderr.write(`⚠ Could not parse ${settingsPath} — skipping forge hook cleanup. Remove forge.* entries manually.\n`);
     process.exit(0);
   }
-  const cleaned = removeForgeHooksFromSettings(settings, 'forge.');
+  const cleaned = removeForgeHooksFromSettings(settings, 'forge.', FORGE_ROOT);
   if (Object.keys(cleaned).length === 0) {
     fs.unlinkSync(settingsPath);
     process.stdout.write('  ✓ settings.json removed (empty)\n');

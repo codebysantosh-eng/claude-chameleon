@@ -479,10 +479,20 @@ SK="sk_""live_""AAAABBBBCCCCDDDD1111"
 assert_hook "secret-detector blocks a real secret"        "${HD}/secret-detector.js" "{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"a.js\",\"content\":\"key=${SK}\"}}" "$DENY"
 assert_hook "secret-detector allows a placeholder"        "${HD}/secret-detector.js" '{"tool_name":"Write","tool_input":{"file_path":"a.js","content":"password = \"changeme123\""}}' "$NEUTRAL"
 assert_hook "secret-detector fails closed on bad input"   "${HD}/secret-detector.js" 'garbage-not-json' "$DENY"
+assert_hook "secret-detector blocks secret in NotebookEdit" "${HD}/secret-detector.js" "{\"tool_name\":\"NotebookEdit\",\"tool_input\":{\"notebook_path\":\"a.ipynb\",\"new_source\":\"key=${SK}\"}}" "$DENY"
+assert_hook "secret-detector blocks secret in NotebookEdit array" "${HD}/secret-detector.js" "{\"tool_name\":\"NotebookEdit\",\"tool_input\":{\"notebook_path\":\"a.ipynb\",\"new_source\":[\"import os\\n\",\"key=${SK}\\n\"]}}" "$DENY"
+assert_hook "secret-detector blocks secret in MultiEdit"  "${HD}/secret-detector.js" "{\"tool_name\":\"MultiEdit\",\"tool_input\":{\"file_path\":\"a.js\",\"edits\":[{\"old_string\":\"a\",\"new_string\":\"key=${SK}\"}]}}" "$DENY"
 assert_hook "block-force-push blocks --force"             "${HD}/block-force-push.js" '{"tool_name":"Bash","tool_input":{"command":"git push --force"}}' "$DENY"
 assert_hook "block-force-push allows a chained -f flag"   "${HD}/block-force-push.js" '{"tool_name":"Bash","tool_input":{"command":"git push origin main && grep -f p.txt"}}' "$NEUTRAL"
+assert_hook "block-force-push blocks -c prefix push -f"   "${HD}/block-force-push.js" '{"tool_name":"Bash","tool_input":{"command":"git -c http.x=y push -f origin main"}}' "$DENY"
+assert_hook "block-force-push blocks force+lease combo"   "${HD}/block-force-push.js" '{"tool_name":"Bash","tool_input":{"command":"git push --force --force-with-lease"}}' "$DENY"
+assert_hook "block-force-push allows --force-with-lease"  "${HD}/block-force-push.js" '{"tool_name":"Bash","tool_input":{"command":"git push --force-with-lease"}}' "$NEUTRAL"
+assert_hook "block-force-push blocks bundled -fq"         "${HD}/block-force-push.js" '{"tool_name":"Bash","tool_input":{"command":"git push -fq origin main"}}' "$DENY"
+assert_hook "block-force-push allows multiline grep -f"   "${HD}/block-force-push.js" '{"tool_name":"Bash","tool_input":{"command":"git push origin main\ngrep -f patterns file"}}' "$NEUTRAL"
 assert_hook "block-hook-bypass blocks commit -n"          "${HD}/block-hook-bypass.js" '{"tool_name":"Bash","tool_input":{"command":"git commit -n -m x"}}' "$DENY"
+assert_hook "block-hook-bypass blocks real --no-verify"   "${HD}/block-hook-bypass.js" '{"tool_name":"Bash","tool_input":{"command":"git commit --no-verify -m x"}}' "$DENY"
 assert_hook "block-hook-bypass allows a plain commit"     "${HD}/block-hook-bypass.js" '{"tool_name":"Bash","tool_input":{"command":"git commit -m ok"}}' "$NEUTRAL"
+assert_hook "block-hook-bypass blocks quoted bypass"      "${HD}/block-hook-bypass.js" '{"tool_name":"Bash","tool_input":{"command":"bash -c \"git commit --no-verify -m x\""}}' "$DENY"
 assert_hook "warn hook emits systemMessage"               "${REPO_ROOT}/profiles/typescript/hooks/console-log-warn.js" '{"tool_name":"Write","tool_input":{"file_path":"x.ts","content":"console.log(1)"}}' "$WARN"
 assert_hook "warn hook stays neutral on bad input"        "${REPO_ROOT}/profiles/typescript/hooks/console-log-warn.js" 'garbage-not-json' "$NEUTRAL"
 fi  # end "hooks-behavior" suite
@@ -502,12 +512,19 @@ const cleaned=r(merged,'forge.');
 process.exit(orig.hooks===undefined && merged.userKey===1 && cleaned.userKey===1 && cleaned.hooks===undefined ? 0:1);" 2>/dev/null \
   && pass "hooks.js: pure merge/remove round-trip preserves user keys" || fail "hooks.js: pure merge/remove round-trip preserves user keys"
 
-# hooks.js: remove also strips legacy id-less entries by command path
+# hooks.js: remove also strips legacy id-less entries by command path (scoped to forgeRoot)
 node -e "const {removeForgeHooksFromSettings:r}=require('${REPO_ROOT}/install/lib/hooks.js');
 const s={hooks:{PreToolUse:[{matcher:'Bash',hooks:[{type:'command',command:'node /x/core/hooks/scripts/secret-detector.js'}]}]}};
-const c=r(s,'forge.');
+const c=r(s,'forge.','/x');
 process.exit(c.hooks===undefined ? 0:1);" 2>/dev/null \
   && pass "hooks.js: removes legacy id-less hooks by command path" || fail "hooks.js: removes legacy id-less hooks by command path"
+
+# hooks.js: a user's OWN id-less hook outside forgeRoot must NOT be removed (no over-match)
+node -e "const {removeForgeHooksFromSettings:r}=require('${REPO_ROOT}/install/lib/hooks.js');
+const s={hooks:{PreToolUse:[{matcher:'Bash',hooks:[{type:'command',command:'node /home/me/myproj/profiles/custom/hooks/mine.js'}]}]}};
+const c=r(s,'forge.','/opt/claude-chameleon');
+process.exit(c.hooks&&c.hooks.PreToolUse&&c.hooks.PreToolUse.length===1 ? 0:1);" 2>/dev/null \
+  && pass "hooks.js: preserves user id-less hook outside forgeRoot" || fail "hooks.js: preserves user id-less hook outside forgeRoot"
 
 # hooks.js: {{NODE}} token resolves to the absolute interpreter (never trusts PATH)
 node -e "const {mergeHooksIntoSettings:m}=require('${REPO_ROOT}/install/lib/hooks.js');

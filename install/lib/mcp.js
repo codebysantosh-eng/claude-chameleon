@@ -106,9 +106,12 @@ function mergeMcpIntoSettings(mcpJson, settings, vars, claudeDir, dryRun, profil
     }
 
     // Command allowlist — prevents a malicious profile from spawning arbitrary binaries.
-    const cmdBase = config.command ? path.basename(config.command) : '';
-    if (!ALLOWED_COMMANDS.has(cmdBase)) {
-      process.stderr.write(`⚠ profiles/${profileName}/mcp.json: command '${config.command}' is not in the allowed list (${[...ALLOWED_COMMANDS].join(', ')}) — skipping server '${name}'\n`);
+    // The command is spawned verbatim (full path), so a path-qualified value like
+    // "/tmp/npx" or "../evil/npx" would pass a basename check while executing an attacker
+    // binary. Require a BARE command name (no path separator) that is on the allowlist.
+    const rawCmd = config.command || '';
+    if (/[\\/]/.test(rawCmd) || !ALLOWED_COMMANDS.has(rawCmd)) {
+      process.stderr.write(`⚠ profiles/${profileName}/mcp.json: command '${config.command}' is not an allowed bare command (${[...ALLOWED_COMMANDS].join(', ')}) — skipping server '${name}'\n`);
       skipped.push({ name: registeredName, reason: 'command not allowed', missing: [] });
       continue;
     }
