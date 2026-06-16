@@ -221,6 +221,26 @@ function validate() {
     hasErrors = true;
   }
 
+  // Check the deterministic handoff generator is present under forge_root (run directly, not symlinked)
+  const handoffGenerator = path.join(FORGE_ROOT, 'install', 'print-handoff.js');
+  try {
+    fs.accessSync(handoffGenerator, fs.constants.R_OK);
+    ok('install/print-handoff.js');
+  } catch {
+    err('install/print-handoff.js — MISSING (stack-orchestrator handoff generator)');
+    hasErrors = true;
+  }
+
+  // Check the kit-coherence auditor is present under forge_root
+  const doctor = path.join(FORGE_ROOT, 'install', 'forge-doctor.js');
+  try {
+    fs.accessSync(doctor, fs.constants.R_OK);
+    ok('install/forge-doctor.js');
+  } catch {
+    err('install/forge-doctor.js — MISSING (kit coherence auditor)');
+    hasErrors = true;
+  }
+
   // Check core hooks are present in settings.json (IDs read from hooks.json, not hardcoded)
   const settingsPath = path.join(CLAUDE_DIR, 'settings.json');
   const coreHooksJsonPath = path.join(FORGE_ROOT, 'core', 'hooks', 'hooks.json');

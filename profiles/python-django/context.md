@@ -34,6 +34,7 @@ threshold: 5
 | Migrations | makemigrations + migrate | Dev: makemigrations; Prod: migrate |
 | Test data | bare fixtures (default) | factory_boy for complex object graphs |
 | WSGI/ASGI | gunicorn / uvicorn | gunicorn for sync, uvicorn for async |
+| a11y | axe-core / pa11y on rendered pages | Wire form errors with aria-describedby; messages in aria-live |
 
 | Pattern | Rule |
 |---------|------|
@@ -50,3 +51,4 @@ threshold: 5
 | ORM + performance | skills/SKILL.md#orm |
 | Logging | skills/SKILL.md#logging |
 | API (DRF) | skills/SKILL.md#drf |
+| Accessibility (templates) | skills/SKILL.md#a11y |

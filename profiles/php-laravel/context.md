@@ -32,6 +32,7 @@ Shop-specific choices only. For canonical facade / helper / API references defer
 | Testing DB | SQLite in-memory + `RefreshDatabase` (default), `DatabaseTransactions` for real-DB commit semantics or DDL | Parallel safe with Paratest (per-process DB). |
 | Migrations | Laravel Migrations, reversible `up` + `down` | Test rollback in CI. |
 | Commands | `composer` scripts + `php artisan` | Routine commands routed via `composer.json` scripts; Laravel-canonical commands stay as `php artisan ...`. |
+| a11y | axe-core / pa11y on rendered Blade pages; Dusk for keyboard walk-throughs | Wire `@error` to `aria-invalid`/`aria-describedby`; flash/`$errors` in `aria-live`. |
 
 For everything else — facades (Http, Mail, Storage, Cache, Cookie, Crypt, Carbon, Log, Notification, Bus, Process, Hash, Crypt), helpers, API Resources, Form Requests, Observers, Events, broadcasting, queue methods, route binding — defer to Laravel docs and the project's adopted patterns. This profile does not duplicate framework documentation.
 
@@ -58,3 +59,4 @@ For everything else — facades (Http, Mail, Storage, Cache, Cookie, Crypt, Carb
 | Security | skills/SKILL.md#security |
 | Migrations | skills/SKILL.md#migrations |
 | Schema & ORM | skills/SKILL.md#schema |
+| Accessibility (Blade) | skills/SKILL.md#a11y |

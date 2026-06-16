@@ -2,6 +2,8 @@
 
 Deep reference for TypeScript development patterns. Load specific sections on demand.
 
+> **Core rules apply on top of this file.** These are *stack-specific* patterns only — the universal guardrails live in `~/.claude/rules/`: coverage targets in `testing.md`, the security checklist in `security.md`, accessibility in `a11y.md`, code quality in `code-quality.md`. This file complements those rules; it does not restate them.
+
 ---
 
 ## testing

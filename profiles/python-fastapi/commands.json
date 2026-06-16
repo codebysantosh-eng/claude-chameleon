@@ -7,7 +7,7 @@
     "format": "black .",
     "typecheck": "mypy .",
     "build": "python -m compileall -q .",
-    "audit": "pip audit",
+    "audit": "pip-audit",
     "e2e": "playwright test",
     "coverage": "pytest --cov --cov-report=term-missing",
     "format-check": "black --check .",

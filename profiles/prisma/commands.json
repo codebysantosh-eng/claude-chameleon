@@ -9,10 +9,10 @@
     "build": "npx prisma generate",
     "audit": "npm audit --production",
     "e2e": null,
-    "coverage": "npx prisma validate",
+    "coverage": null,
     "migrate": "npx prisma migrate dev",
     "deploy": "npx prisma migrate deploy",
-    "format-check": "npx prisma format --check",
-    "logs": "npx prisma studio"
+    "format-check": null,
+    "logs": null
   }
 }

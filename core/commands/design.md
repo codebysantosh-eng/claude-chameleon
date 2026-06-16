@@ -6,7 +6,8 @@ depth: deep
 > **Before proceeding**: invoke the `stack-orchestrator` agent with the current task.
 > Only continue once it confirms profiles are loaded or generic mode is active.
 > Parse active profiles and commands from the `<<<FORGE_HANDOFF>>>` block in its output.
-> If the orchestrator enters generic mode (no `<<<FORGE_HANDOFF>>>` block), proceed without profile-specific context.
+> If the orchestrator returns a `<<<FORGE_GENERIC_MODE>>>` block instead, proceed without profile-specific context.
+> **Forward the `<<<FORGE_HANDOFF>>>` block verbatim into the agent's prompt** so it uses the already-loaded profile context instead of re-reading `.forge.yaml`.
 
 Use the `architect` agent to design:
 

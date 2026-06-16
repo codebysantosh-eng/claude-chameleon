@@ -27,6 +27,7 @@ threshold: 5
 | DI | services.yaml autowiring | Constructor injection preferred |
 | Migrations | Doctrine Migrations | `doctrine:migrations:migrate` |
 | Commands | `composer test` | Routes all commands via composer scripts |
+| a11y | axe-core / pa11y on rendered pages | Form theme must link errors (aria-describedby); flashes in aria-live |
 
 | Pattern | Rule |
 |---------|------|
@@ -34,7 +35,7 @@ threshold: 5
 | Controllers | Thin controllers; business logic in services |
 | DTOs | Use Data Transfer Objects for command/query boundaries |
 | Events | Symfony EventDispatcher for cross-cutting concerns |
-| Transactions | `$entityManager->wrapInTransaction()` for multi-step writes |
+| Transactions | Doctrine 3.x: `$connection->transactional(fn() => …)` (or explicit `beginTransaction`/`commit`/`rollBack`) — `wrapInTransaction()` was removed |
 | Forms | Symfony Form component; validate with constraints |
 
 | Skill topic | Reference |
@@ -46,3 +47,4 @@ threshold: 5
 | DI and Services | skills/SKILL.md#services |
 | Resilience + retries | skills/SKILL.md#resilience |
 | Performance | skills/SKILL.md#performance |
+| Accessibility (Twig) | skills/SKILL.md#a11y |

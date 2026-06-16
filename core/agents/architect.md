@@ -37,7 +37,7 @@ Research → Design → Plan. You produce plans, not code. Implementation awaits
 1. **Delegate prior-art enumeration to Haiku.** Spawn an `Explore` subagent with `model: "haiku"` to grep for 2–3 places where the team has solved a problem of the same shape (same domain, same problem class — e.g., "background job," "external API client," "feature flag check"). Ask it to return `file:line` paths with one-line descriptions only. This is shallow lookup work — see `~/.claude/rules/model-strategy.md`.
 2. **Read the flagged files in full at your own model.** Don't trust summaries for design — read the actual code. Note the dominant patterns: helper modules everyone reaches for, base classes, custom hooks, error-handling conventions, naming.
 3. **Read prior decisions** (also delegatable to Haiku for enumeration): `CLAUDE.md`, `AUTHORING.md`, any `ADR/` or `docs/decisions/` directory, and recent commits in the touched area (`git log --oneline -20 -- <path>`).
-4. **Consult the active stack profile** for framework-level conventions: read `.forge.yaml` → each profile's `context.md`.
+4. **Consult the active stack profile** for framework-level conventions: if the invoking command passed a `<<<FORGE_HANDOFF>>>` block, use it to identify active profiles, then read each profile's `context.md` directly; otherwise read `.forge.yaml` first.
 5. **Search for external prior art** (WebSearch/WebFetch) only after the codebase has been mined — internal patterns trump external ones.
 
 Output a short "Prior Art" section before Options listing the 2–3 most relevant existing implementations with `file:line` citations. If no prior art exists, say so explicitly — that itself is design-relevant.

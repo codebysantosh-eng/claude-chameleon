@@ -549,6 +549,143 @@ process.exit(r.status===0 ? 0:1);" 2>/dev/null \
   && pass "hooks.js: spaced interpreter path executes under stripped PATH" || fail "hooks.js: spaced interpreter path executes under stripped PATH"
 fi  # end "lib-unit" suite
 
+# ─── 8. Handoff Generator ────────────────────────────────────────────────────
+# The orchestrator handoff is generated deterministically by install/print-handoff.js
+# (no LLM formatting). These tests pin the contract: success shape, routing/collision,
+# and explicit (never silent) generic-mode blocks with reason codes.
+
+if run_suite "handoff"; then
+
+HANDOFF="${REPO_ROOT}/install/print-handoff.js"
+
+# run the generator against a fixture project, assert a node predicate over stdout string `out`
+assert_handoff() { # label project predicate
+  if node -e "
+const {spawnSync}=require('child_process');
+const r=spawnSync('node',['${HANDOFF}','--forge-root','${REPO_ROOT}','--project','$2'],{encoding:'utf8'});
+const out=r.stdout||'';
+process.exit((($3)) && r.status===0 ? 0:1);
+" 2>/dev/null; then
+    pass "$1"
+  else
+    fail "$1" "predicate failed"
+  fi
+}
+
+# success: single profile emits a well-formed, versioned handoff block
+H_TS="${TEST_TMPDIR}/handoff-ts"
+mkdir -p "$H_TS"
+printf 'profiles:\n  - typescript\n' > "${H_TS}/.forge.yaml"
+assert_handoff "handoff: success block for typescript" "$H_TS" \
+  "out.includes('<<<FORGE_HANDOFF>>>') && out.includes('<<<END_FORGE_HANDOFF>>>') && out.includes('HANDOFF_VERSION: 1') && out.includes('ACTIVE_PROFILES: typescript |') && out.includes('test:npx vitest run') && out.includes('COLLISION_RULE: first listed profile wins')"
+
+# routing + collision: the first-listed profile claims shared extensions
+H_COL="${TEST_TMPDIR}/handoff-collision"
+mkdir -p "$H_COL"
+printf 'profiles:\n  - typescript\n  - nextjs\n' > "${H_COL}/.forge.yaml"
+assert_handoff "handoff: first-listed profile wins extension collision" "$H_COL" \
+  "out.includes('FILE_ROUTING: .ts,.tsx,.mts,.cts') && out.includes('.jsx,.js') && out.split('ACTIVE_PROFILES:').length===3"
+
+# null command surfaces as 'none', never a blank/garbage command
+H_PRISMA="${TEST_TMPDIR}/handoff-prisma"
+mkdir -p "$H_PRISMA"
+printf 'profiles:\n  - prisma\n' > "${H_PRISMA}/.forge.yaml"
+assert_handoff "handoff: null test command renders as 'none'" "$H_PRISMA" \
+  "out.includes('ACTIVE_PROFILES: prisma |') && out.includes('test:none')"
+
+# generic: no .forge.yaml → explicit generic block, never a silent absence
+H_NONE="${TEST_TMPDIR}/handoff-none"
+mkdir -p "$H_NONE"
+assert_handoff "handoff: explicit generic block when no .forge.yaml" "$H_NONE" \
+  "out.includes('<<<FORGE_GENERIC_MODE>>>') && out.includes('REASON: no-forge-yaml') && !out.includes('<<<FORGE_HANDOFF>>>')"
+
+# generic: unknown profile → broken-profile reason
+H_BROKEN="${TEST_TMPDIR}/handoff-broken"
+mkdir -p "$H_BROKEN"
+printf 'profiles:\n  - nonexistent-profile\n' > "${H_BROKEN}/.forge.yaml"
+assert_handoff "handoff: broken-profile reason for unknown profile" "$H_BROKEN" \
+  "out.includes('<<<FORGE_GENERIC_MODE>>>') && out.includes('REASON: broken-profile')"
+
+# bad forge-root → forge-root-not-readable, and still exits 0 (generic mode is not a crash)
+if node -e "
+const {spawnSync}=require('child_process');
+const r=spawnSync('node',['${HANDOFF}','--forge-root','${TEST_TMPDIR}/does-not-exist','--project','${H_TS}'],{encoding:'utf8'});
+const out=r.stdout||'';
+process.exit(out.includes('REASON: forge-root-not-readable') && r.status===0 ? 0:1);
+" 2>/dev/null; then
+  pass "handoff: forge-root-not-readable when kit root missing (exit 0)"
+else
+  fail "handoff: forge-root-not-readable when kit root missing (exit 0)" "wrong reason or nonzero exit"
+fi
+
+fi  # end "handoff" suite
+
+# ─── 9. Doctor (kit coherence) ───────────────────────────────────────────────
+# forge-doctor statically audits the whole kit's internal cross-references. These
+# tests prove it passes the committed kit AND catches injected coherence faults —
+# so the doctor itself can't silently rot.
+
+if run_suite "doctor"; then
+
+DOCTOR="${REPO_ROOT}/install/forge-doctor.js"
+
+# positive: the committed kit is coherent
+if node "$DOCTOR" --forge-root "$REPO_ROOT" >/dev/null 2>&1; then
+  pass "doctor: committed kit passes clean"
+else
+  fail "doctor: committed kit passes clean" "doctor reported errors on the committed kit — run: node install/forge-doctor.js"
+fi
+
+# Build a cheap copy of just what the doctor reads, then inject faults.
+DOC_COPY="${TEST_TMPDIR}/kit-copy"
+mkdir -p "$DOC_COPY"
+for d in core agents profiles install CLAUDE.md; do cp -R "${REPO_ROOT}/${d}" "${DOC_COPY}/"; done
+
+# sanity: the untouched copy is also clean
+if node "$DOCTOR" --forge-root "$DOC_COPY" >/dev/null 2>&1; then
+  pass "doctor: clean copy passes"
+else
+  fail "doctor: clean copy passes" "copy diverged from source"
+fi
+
+# fault 1: invalid agent model (violates the two-tier rule)
+node -e 'const fs=require("fs"),p=process.argv[1];fs.writeFileSync(p,fs.readFileSync(p,"utf8").replace("model: opus","model: sonnet"))' "${DOC_COPY}/core/agents/architect.md"
+if node "$DOCTOR" --forge-root "$DOC_COPY" >/dev/null 2>&1; then
+  fail "doctor: detects invalid agent model" "doctor passed a kit with model: sonnet"
+else
+  pass "doctor: detects invalid agent model"
+fi
+cp "${REPO_ROOT}/core/agents/architect.md" "${DOC_COPY}/core/agents/architect.md"
+
+# fault 2: CLAUDE.md depth table drifts from the command files (drop /scan)
+node -e 'const fs=require("fs"),p=process.argv[1];fs.writeFileSync(p,fs.readFileSync(p,"utf8").replace("`/scan`, ",""))' "${DOC_COPY}/CLAUDE.md"
+if node "$DOCTOR" --forge-root "$DOC_COPY" >/dev/null 2>&1; then
+  fail "doctor: detects depth-table drift" "doctor passed a kit with /scan missing from the depth table"
+else
+  pass "doctor: detects depth-table drift"
+fi
+cp "${REPO_ROOT}/CLAUDE.md" "${DOC_COPY}/CLAUDE.md"
+
+# fault 3: a profile loses its #a11y section (the a11y rule dereferences it)
+node -e 'const fs=require("fs"),p=process.argv[1];fs.writeFileSync(p,fs.readFileSync(p,"utf8").replace(/\n## a11y\n/," \n## REMOVED\n"))' "${DOC_COPY}/profiles/nextjs/skills/SKILL.md"
+if node "$DOCTOR" --forge-root "$DOC_COPY" >/dev/null 2>&1; then
+  fail "doctor: detects missing #a11y section" "doctor passed a profile with no ## a11y"
+else
+  pass "doctor: detects missing #a11y section"
+fi
+cp "${REPO_ROOT}/profiles/nextjs/skills/SKILL.md" "${DOC_COPY}/profiles/nextjs/skills/SKILL.md"
+
+# fault 4: an agent is instructed to use a tool it isn't granted (security-scanner class)
+node -e 'const fs=require("fs"),p=process.argv[1];let s=fs.readFileSync(p,"utf8");s=s.replace("tools: Read, Grep, Glob, Bash, Edit","tools: Read, Grep, Glob, Bash");fs.writeFileSync(p,s)' "${DOC_COPY}/core/agents/security-scanner.md"
+if node "$DOCTOR" --forge-root "$DOC_COPY" >/dev/null 2>&1; then
+  fail "doctor: detects tool/instruction mismatch" "doctor passed an agent told to use an ungranted tool"
+else
+  pass "doctor: detects tool/instruction mismatch"
+fi
+cp "${REPO_ROOT}/core/agents/security-scanner.md" "${DOC_COPY}/core/agents/security-scanner.md"
+
+fi  # end "doctor" suite
+
 # ─── Summary ──────────────────────────────────────────────────────────────────
 
 echo ""
