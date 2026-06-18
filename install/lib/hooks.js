@@ -69,11 +69,21 @@ function mergeHooksIntoSettings(hooksJson, settings, options) {
 
 // Pure removal. Matches a forge hook by ID prefix OR — for legacy entries written before
 // IDs existed — by command path pointing into the kit's hook scripts. Returns new settings.
-function removeForgeHooksFromSettings(settings, prefix) {
+function removeForgeHooksFromSettings(settings, prefix, forgeRoot) {
   if (!settings || !settings.hooks) return settings;
-  const isForge = h =>
-    (h.id && h.id.startsWith(prefix)) ||
-    /\/(core\/hooks\/scripts|profiles\/[^/]+\/hooks)\//.test(h.command || '');
+  const isForge = h => {
+    if (h.id && h.id.startsWith(prefix)) return true;
+    // Legacy id-less hooks (written before IDs existed) are matched by command path — but
+    // ONLY when the path points into THIS kit install (forgeRoot). Without forgeRoot we
+    // cannot distinguish a forge hook from a user's own hook whose path merely contains
+    // these segments (e.g. ~/myproj/profiles/x/hooks/mine.js), so we do NOT path-match.
+    const cmd = h.command || '';
+    // Require a path boundary after forgeRoot so a superstring sibling dir
+    // (forgeRoot `/opt/cc` vs a user's `/opt/cc-evil/...`) cannot match.
+    const fr = forgeRoot ? String(forgeRoot).replace(/[/\\]+$/, '') : '';
+    return !!fr && cmd.includes(fr + '/') &&
+      /\/(core\/hooks\/scripts|profiles\/[^/]+\/hooks)\//.test(cmd);
+  };
 
   const newHooks = {};
   for (const phase of Object.keys(settings.hooks)) {

@@ -246,6 +246,7 @@ Rules:
 - [ ] `commands.json` has all 8 required keys present: `test`, `lint`, `format`, `build`, `audit`, `coverage`, `format-check`, `logs` (may be `null` for ORM/library profiles; `typecheck` and `e2e` may be omitted entirely)
 - [ ] Any scripts referenced in `hooks.json` exist under `hooks/`
 - [ ] Optional mcp.json uses `$VAR_NAME` (not `{{VAR_NAME}}`) for any secret args so credentials are never written to settings.json
+- [ ] Optional mcp.json `command` is a **bare** name from the allowlist (`npx`, `node`, `bun`, `pnpm`, `uvx`, `uv`, `python`, `python3`, `yarn`, `deno`) — no path separators (a path-qualified command is rejected)
 - [ ] Hook IDs namespaced `forge.<profile-name>.<hook-name>`
 - [ ] `rules.md` ≤ 4 lines
 - [ ] `context.md` uses markdown tables (not key-value, not prose)

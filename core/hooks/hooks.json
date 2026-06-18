@@ -50,6 +50,26 @@
           }
         ],
         "matcher": "Bash"
+      },
+      {
+        "hooks": [
+          {
+            "id": "forge.core.secret-detector-multiedit",
+            "type": "command",
+            "command": "{{NODE}} {{FORGE_ROOT}}/core/hooks/scripts/secret-detector.js"
+          }
+        ],
+        "matcher": "MultiEdit"
+      },
+      {
+        "hooks": [
+          {
+            "id": "forge.core.secret-detector-notebook",
+            "type": "command",
+            "command": "{{NODE}} {{FORGE_ROOT}}/core/hooks/scripts/secret-detector.js"
+          }
+        ],
+        "matcher": "NotebookEdit"
       }
     ],
     "PostToolUse": [

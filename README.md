@@ -134,11 +134,11 @@ FORBIDDEN: print() → structlog | os.environ → django.conf.settings | raw SQL
 
 ## Safety Hooks
 
-Embedded in `.claude/settings.json`, triggered on every Write/Edit/Bash:
+Embedded in `.claude/settings.json`, triggered on Write/Edit/MultiEdit/NotebookEdit/Bash:
 
 | Hook | Blocks | Reason |
 |------|--------|--------|
-| `block-force-push` | `git push --force` (without `--force-with-lease`) | Prevents overwriting teammates' work |
+| `block-force-push` | any bare `git push --force`/`-f` (use `--force-with-lease` instead) | Prevents overwriting teammates' work |
 | `block-hook-bypass` | `git commit --no-verify` (git commands only) | Ensures safety checks run |
 | `env-gitignore-guard` | `.env` file writes without gitignore entry | Prevents accidental secret commits |
 | `secret-detector` | 15+ secret patterns (AWS, GitHub, API keys, MongoDB URIs, etc.) | Blocks credential leaks before they happen |

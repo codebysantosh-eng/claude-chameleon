@@ -30,7 +30,14 @@ function readInput(run, opts = {}) {
       else allow();
       return;
     }
-    run(input);
+    // Backstop: an exception thrown inside run() (e.g. an unexpected tool-input shape)
+    // would otherwise exit non-zero and FAIL OPEN. Catch it so blocking hooks deny instead.
+    try {
+      run(input);
+    } catch (e) {
+      if (failClosed) deny(`${label}: hook error (${e && e.message}) — blocking to be safe.`, event);
+      else allow();
+    }
   });
 }
 

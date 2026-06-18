@@ -229,13 +229,6 @@ function checkForMissingProfiles(forgeRoot, projectPath, detectedProfiles) {
     'python-fastapi': [
       { file: 'pyproject.toml', contains: 'fastapi' },
       { file: 'requirements.txt', contains: 'fastapi' }
-    ],
-    'go': [
-      { file: 'go.mod' },
-      { glob: 'cmd/**/*.go' }
-    ],
-    'rust': [
-      { file: 'Cargo.toml' }
     ]
   };
 
@@ -394,7 +387,7 @@ function uninstallProfiles(forgeRoot, projectPath) {
         if (mcpServerNames.length > 0) log(`[dry-run] Would remove MCP servers: ${mcpServerNames.join(', ')}`);
         log('[dry-run] Would write (or delete if empty) .claude/settings.local.json');
       } else {
-        settings = removeForgeHooksFromSettings(settings, 'forge.');
+        settings = removeForgeHooksFromSettings(settings, 'forge.', forgeRoot);
         if (mcpServerNames.length > 0) settings = removeMcpServersFromSettings(settings, mcpServerNames, claudeDir);
 
         if (Object.keys(settings).length === 0) {
